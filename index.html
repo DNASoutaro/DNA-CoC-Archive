@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark only">
+<meta name="supported-color-schemes" content="dark">
+<meta name="theme-color" content="#0b1118">
+<title>探索者書庫 ─ CoC Explorer Archive</title>
+<style>/* === CoC探索者DB スタイル === */
+:root{
+  color-scheme:dark only;
+  --abyss:#0b1118;       /* 最深部の背景 */
+  --abyss-2:#111b26;     /* パネル背景 */
+  --abyss-3:#18293a;     /* カード背景 */
+  --ink:#e8eef3;         /* 主要テキスト */
+  --ink-dim:#8aa0b3;     /* 副次テキスト */
+  --ink-faint:#516375;   /* 補助・初期値技能 */
+  --brass:#c9a24b;       /* 真鍮・アクセント(羊皮紙の金) */
+  --brass-dim:#8a7233;
+  --verdigris:#3f9c8f;   /* 緑青・習得技能の印 */
+  --verdigris-bright:#5fd3c2; /* 技能値テキスト用(濃く明るい緑青) */
+  --skill-initial:#7d92a6;   /* 初期値技能の文字(従来より明るく) */
+  --blood:#9c3f3f;       /* 警告・SAN */
+  --line:#22323f;
+  --radius:3px;
+  --shadow:0 8px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--abyss)!important;color:var(--ink);min-height:100%}
+html{background:var(--abyss)!important}
+body{
+  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+  font-feature-settings:"palt";
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.sans{font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif}
+
+/* ヘッダ */
+header.topbar{
+  position:sticky;top:0;z-index:40;
+  background:linear-gradient(180deg,rgba(11,17,24,.98),rgba(11,17,24,.9));
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(8px);
+}
+.topbar-inner{
+  max-width:760px;margin:0 auto;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.brand{font-size:18px;letter-spacing:.18em;color:var(--brass);font-weight:600}
+.brand small{display:block;font-size:9px;letter-spacing:.3em;color:var(--ink-faint);font-family:"Hiragino Sans",sans-serif;margin-top:2px}
+.count-pill{
+  margin-left:auto;font-family:"Hiragino Sans",sans-serif;font-size:11px;
+  color:var(--ink-dim);border:1px solid var(--line);border-radius:999px;
+  padding:3px 10px;letter-spacing:.05em;
+}
+
+main{max-width:760px;margin:0 auto;padding:16px;}
+
+/* ツールバー */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.btn{
+  font-family:"Hiragino Sans",sans-serif;font-size:13px;
+  background:var(--abyss-2);color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);padding:9px 14px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;transition:.15s;
+}
+.btn:hover{border-color:var(--brass-dim);color:var(--brass)}
+.btn-primary{background:var(--brass);color:var(--abyss);border-color:var(--brass);font-weight:600}
+.btn-primary:hover{background:#d8b25a;color:var(--abyss)}
+.btn-ghost{background:transparent}
+
+/* ソート/フィルタ操作行 */
+.controls{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  font-family:"Hiragino Sans",sans-serif;font-size:12px;margin-bottom:14px;
+}
+.controls select{
+  background:var(--abyss-2);color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);padding:8px 10px;font-size:12px;font-family:inherit;
+}
+.controls .label{color:var(--ink-faint);letter-spacing:.08em}
+.filter-active{color:var(--verdigris);border-color:var(--verdigris)!important}
+
+/* カード一覧 */
+.grid{display:flex;flex-direction:column;gap:12px}
+.card{
+  background:linear-gradient(135deg,var(--abyss-3),var(--abyss-2));
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px;cursor:pointer;position:relative;overflow:hidden;
+  transition:.18s;display:flex;gap:14px;align-items:center;
+}
+.card:hover{border-color:var(--brass-dim);transform:translateY(-1px)}
+.card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--brass-dim);opacity:.6;
+}
+.card-thumb{
+  width:56px;height:56px;border-radius:var(--radius);flex-shrink:0;
+  background:var(--abyss);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Hiragino Sans",sans-serif;color:var(--ink-faint);font-size:20px;
+  object-fit:cover;
+}
+img.card-thumb{object-fit:cover}
+.card-body{flex:1;min-width:0}
+.card-title{font-size:16px;color:var(--brass);margin-bottom:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-name{font-size:13px;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-meta{font-family:"Hiragino Sans",sans-serif;font-size:11px;color:var(--ink-faint);
+  margin-top:4px;letter-spacing:.04em}
+.card-stats{
+  display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;
+  font-family:"Hiragino Sans",sans-serif;font-size:11px;
+}
+.stat-chip{color:var(--ink-dim)}
+.stat-chip b{color:var(--ink);font-weight:600}
+.sort-key-badge{color:var(--verdigris)!important}
+
+/* 一覧カードの削除ボタン */
+.card-del{
+  align-self:flex-start;flex-shrink:0;
+  width:30px;height:30px;border-radius:50%;
+  background:transparent;border:1px solid var(--line);
+  color:var(--ink-faint);font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:.15s;line-height:1;
+}
+.card-del:hover,.card-del:active{
+  background:var(--blood);border-color:var(--blood);color:#fff;
+}
+
+/* 空状態 */
+.empty{
+  text-align:center;padding:60px 20px;color:var(--ink-faint);
+  font-family:"Hiragino Sans",sans-serif;
+}
+.empty .rune{font-size:40px;color:var(--brass-dim);opacity:.5;margin-bottom:14px;font-family:serif}
+
+/* ボトムシート(フィルタ) */
+.scrim{
+  position:fixed;inset:0;background:rgba(4,8,12,.7);z-index:50;
+  opacity:0;pointer-events:none;transition:.2s;
+}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  background:var(--abyss-2);border-top:1px solid var(--brass-dim);
+  border-radius:14px 14px 0 0;box-shadow:var(--shadow);
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);
+  max-height:82vh;display:flex;flex-direction:column;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.sheet.open{transform:translateY(0)}
+.sheet-grip{width:40px;height:4px;background:var(--line);border-radius:2px;margin:10px auto 4px}
+.sheet-head{
+  display:flex;align-items:center;padding:6px 18px 12px;
+  border-bottom:1px solid var(--line);
+}
+.sheet-head h3{font-size:15px;color:var(--brass);letter-spacing:.1em}
+.sheet-head .btn{margin-left:auto}
+.sheet-body{overflow-y:auto;padding:14px 18px}
+.sheet-foot{
+  padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;
+}
+.sheet-foot .btn{flex:1;justify-content:center}
+
+/* 技能フィルタ チェック群 */
+.skillcat{margin-bottom:18px}
+.skillcat h4{
+  font-family:"Hiragino Sans",sans-serif;font-size:11px;letter-spacing:.18em;
+  color:var(--ink-faint);margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:5px;
+}
+.skill-checks{display:flex;flex-wrap:wrap;gap:7px}
+.skill-chk{
+  font-family:"Hiragino Sans",sans-serif;font-size:12px;
+  border:1px solid var(--line);border-radius:999px;padding:6px 12px;
+  cursor:pointer;color:var(--ink-dim);user-select:none;transition:.12s;
+}
+.skill-chk:hover{border-color:var(--brass-dim)}
+.skill-chk.on{background:var(--verdigris);color:var(--abyss);border-color:var(--verdigris);font-weight:600}
+.skill-chk .cnt{opacity:.6;font-size:10px;margin-left:3px}
+
+.mode-toggle{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.mode-toggle button{
+  background:var(--abyss);color:var(--ink-dim);border:none;
+  font-family:"Hiragino Sans",sans-serif;font-size:11px;padding:7px 12px;cursor:pointer;
+}
+.mode-toggle button.on{background:var(--brass);color:var(--abyss);font-weight:600}
+.thresh-row{display:flex;align-items:center;gap:10px;margin-top:6px;font-family:"Hiragino Sans",sans-serif;font-size:12px;color:var(--ink-dim)}
+.thresh-row input[type=range]{flex:1;accent-color:var(--verdigris)}
+
+/* 詳細ページ */
+.detail-wrap{display:none}
+body.detail-mode .list-wrap{display:none}
+body.detail-mode .detail-wrap{display:block}
+.detail-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:20px}
+.detail-portrait{
+  width:96px;height:96px;border-radius:var(--radius);flex-shrink:0;
+  background:var(--abyss);border:1px solid var(--line);object-fit:cover;
+  display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:32px;
+}
+.detail-title{font-size:24px;color:var(--brass);line-height:1.2;margin-bottom:4px}
+.detail-name{font-size:15px;color:#f4f8fb;font-weight:600}
+.detail-sub{font-family:"Hiragino Sans",sans-serif;font-size:12px;color:var(--ink-faint);margin-top:8px;line-height:1.8}
+.detail-sub a{color:var(--verdigris);text-decoration:none}
+
+.section-label{
+  font-family:"Hiragino Sans",sans-serif;font-size:11px;letter-spacing:.2em;
+  color:var(--ink-faint);margin:24px 0 10px;display:flex;align-items:center;gap:10px;
+}
+.section-label::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* 能力値グリッド */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat-box{
+  background:var(--abyss-2);border:1px solid var(--line);border-radius:var(--radius);
+  padding:10px 8px;text-align:center;
+}
+.stat-box .k{font-family:"Hiragino Sans",sans-serif;font-size:10px;color:var(--ink-faint);letter-spacing:.1em}
+.stat-box .v{font-size:20px;color:var(--ink);margin-top:2px}
+.stat-box.derived .v{color:var(--brass)}
+.stat-box.san .v{color:var(--blood)}
+
+/* 技能テーブル */
+.skill-toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-family:"Hiragino Sans",sans-serif;font-size:12px}
+.toggle{
+  position:relative;width:42px;height:23px;background:var(--abyss);border:1px solid var(--line);
+  border-radius:999px;cursor:pointer;transition:.18s;flex-shrink:0;
+}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;
+  background:var(--ink-dim);border-radius:50%;transition:.18s}
+.toggle.on{background:var(--verdigris);border-color:var(--verdigris)}
+.toggle.on::after{transform:translateX(19px);background:var(--abyss)}
+
+.skill-list{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+@media(max-width:520px){.skill-list{grid-template-columns:1fr}.stat-grid{grid-template-columns:repeat(3,1fr)}}
+.skill-row{
+  display:flex;align-items:baseline;gap:8px;padding:5px 8px;
+  border-bottom:1px dotted var(--line);font-size:14px;
+}
+.skill-row.initial{color:var(--skill-initial)}
+.skill-row.allocated .sv{color:var(--verdigris-bright);font-weight:700}
+.skill-row.allocated .sn{color:#eef4f8}
+.skill-row .sn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skill-row .sn .sub{font-size:11px;color:var(--ink-faint);font-family:"Hiragino Sans",sans-serif}
+.skill-row .sv{font-family:"Hiragino Sans",sans-serif;font-variant-numeric:tabular-nums;font-size:14px;color:inherit}
+.skill-row .mark{color:var(--verdigris);font-size:11px;width:10px}
+.skill-row.hidden-initial{display:none}
+body.show-initial .skill-row.hidden-initial{display:flex}
+
+.back-btn{
+  font-family:"Hiragino Sans",sans-serif;font-size:13px;background:none;border:none;
+  color:var(--ink-dim);cursor:pointer;padding:8px 0;margin-bottom:8px;display:inline-flex;gap:6px;
+}
+.back-btn:hover{color:var(--brass)}
+
+/* タグ */
+.tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-family:"Hiragino Sans",sans-serif;font-size:11px;color:var(--brass);
+  border:1px solid var(--brass-dim);border-radius:999px;padding:3px 10px}
+
+/* メモ */
+.memo{
+  background:var(--abyss-2);border:1px solid var(--line);border-left:2px solid var(--brass-dim);
+  border-radius:var(--radius);padding:14px 16px;font-size:13px;line-height:1.9;
+  white-space:pre-wrap;color:var(--ink-dim);max-height:300px;overflow-y:auto;
+}
+
+/* モーダル(ペースト/インポート) */
+.modal-scrim{position:fixed;inset:0;background:rgba(4,8,12,.8);z-index:70;
+  display:none;align-items:center;justify-content:center;padding:16px}
+.modal-scrim.open{display:flex}
+.modal{
+  background:var(--abyss-2);border:1px solid var(--brass-dim);border-radius:8px;
+  width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow);
+}
+.modal-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center}
+.modal-head h3{color:var(--brass);font-size:16px;letter-spacing:.08em}
+.modal-head .btn{margin-left:auto}
+.modal-body{padding:16px 18px;overflow-y:auto}
+.modal-body p{font-family:"Hiragino Sans",sans-serif;font-size:12px;color:var(--ink-dim);margin-bottom:10px;line-height:1.7}
+textarea.paste{
+  width:100%;min-height:220px;background:var(--abyss);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--radius);padding:12px;
+  font-family:"Hiragino Sans",monospace;font-size:12px;line-height:1.5;resize:vertical;
+}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end}
+.preview-box{background:var(--abyss);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px;margin-top:12px;font-family:"Hiragino Sans",sans-serif;font-size:12px;color:var(--ink-dim)}
+.preview-box b{color:var(--brass)}
+
+.hidden{display:none!important}
+
+/* ネタバレ注意マーク */
+.spoiler-badge{color:#e0a93f;margin-right:5px;font-size:.95em}
+.detail-title .spoiler-badge{font-size:.8em;vertical-align:middle}
+
+/* カード上のユーザータグ */
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.mini-tag{font-family:"Hiragino Sans",sans-serif;font-size:10px;color:var(--brass);
+  border:1px solid var(--brass-dim);border-radius:999px;padding:1px 8px}
+
+/* ネタバレトグル行 */
+.spoiler-toggle-row{display:flex;align-items:center;gap:10px;margin:18px 0 4px;font-size:13px;color:var(--ink)}
+
+/* ユーザータグ編集 */
+.utag-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px;min-height:8px}
+.utag{display:inline-flex;align-items:center;gap:4px;font-family:"Hiragino Sans",sans-serif;
+  font-size:12px;color:var(--brass);border:1px solid var(--brass-dim);border-radius:999px;padding:4px 6px 4px 11px}
+.utag-x{background:none;border:none;color:var(--brass);cursor:pointer;font-size:14px;
+  line-height:1;padding:0 2px;opacity:.7}
+.utag-x:hover{opacity:1;color:var(--blood)}
+.utag-add{display:flex;gap:8px}
+.utag-add input{flex:1;background:var(--abyss);color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);padding:9px 12px;font-size:13px;font-family:"Hiragino Sans",sans-serif}
+
+/* 魔術・神話生物のテキストエリア */
+.lore-area{width:100%;min-height:80px;background:var(--abyss-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--radius);padding:12px;font-size:14px;
+  line-height:1.7;resize:vertical;font-family:inherit}
+.lore-area::placeholder{color:var(--ink-faint)}
+
+/* 秘匿メモ(折りたたみ式) */
+.secret-memo{background:var(--abyss-2);border:1px solid var(--line);
+  border-left:2px solid var(--blood);border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
+.secret-head{display:flex;align-items:center;gap:8px;padding:8px 10px}
+.secret-toggle{background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:12px;
+  padding:2px 4px;flex-shrink:0}
+.secret-title{flex:1;background:transparent;color:var(--brass);border:none;
+  font-family:"Hiragino Sans",sans-serif;font-size:14px;font-weight:600;padding:4px;min-width:0}
+.secret-title::placeholder{color:var(--ink-faint);font-weight:400}
+.secret-del{background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:13px;
+  padding:2px 6px;flex-shrink:0}
+.secret-del:hover{color:var(--blood)}
+.secret-body-wrap{max-height:0;overflow:hidden;transition:max-height .2s ease}
+.secret-memo.open .secret-body-wrap{max-height:600px}
+.secret-body{width:100%;min-height:90px;background:var(--abyss);color:var(--ink);
+  border:none;border-top:1px solid var(--line);padding:12px;font-size:14px;line-height:1.7;
+  resize:vertical;font-family:inherit}
+.secret-body::placeholder{color:var(--ink-faint)}
+
+/* トースト */
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+  background:var(--abyss-3);border:1px solid var(--brass-dim);color:var(--ink);
+  font-family:"Hiragino Sans",sans-serif;font-size:13px;padding:11px 18px;border-radius:999px;
+  z-index:90;opacity:0;transition:.25s;pointer-events:none;box-shadow:var(--shadow);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.fab-row{display:flex;gap:8px;position:sticky;bottom:16px;justify-content:center;margin-top:20px;z-index:30}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">探索者書庫<small>EXPLORER ARCHIVE</small></div>
+    <span class="count-pill" id="countPill">0 体</span>
+  </div>
+</header>
+
+<main>
+  <!-- 一覧 -->
+  <div class="list-wrap">
+    <div class="toolbar">
+      <button class="btn btn-primary sans" id="pasteBtn">＋ テキスト追加</button>
+      <button class="btn sans" id="importBtn">JSON取り込み</button>
+      <button class="btn btn-ghost sans" id="exportBtn">バックアップ</button>
+    </div>
+    <div class="controls">
+      <span class="label">並び替え</span>
+      <select id="sortSelect">
+        <optgroup label="基本">
+          <option value="updatedAt:desc">更新が新しい順</option>
+          <option value="updatedAt:asc">更新が古い順</option>
+          <option value="name:asc">名前順 (あ→ん)</option>
+        </optgroup>
+        <optgroup label="能力値が高い順">
+          <option value="STR:desc">STR 高い順</option>
+          <option value="CON:desc">CON 高い順</option>
+          <option value="POW:desc">POW 高い順</option>
+          <option value="DEX:desc">DEX 高い順</option>
+          <option value="APP:desc">APP 高い順</option>
+          <option value="SIZ:desc">SIZ 高い順</option>
+          <option value="INT:desc">INT 高い順</option>
+          <option value="EDU:desc">EDU 高い順</option>
+          <option value="SAN_current:desc">SAN 高い順</option>
+          <option value="HP:desc">HP 高い順</option>
+        </optgroup>
+        <optgroup label="能力値が低い順">
+          <option value="STR:asc">STR 低い順</option>
+          <option value="CON:asc">CON 低い順</option>
+          <option value="POW:asc">POW 低い順</option>
+          <option value="DEX:asc">DEX 低い順</option>
+          <option value="SIZ:asc">SIZ 低い順</option>
+          <option value="INT:asc">INT 低い順</option>
+          <option value="EDU:asc">EDU 低い順</option>
+          <option value="SAN_current:asc">SAN 低い順</option>
+        </optgroup>
+        <optgroup label="技能値が高い順">
+          <option value="目星:desc">目星 高い順</option>
+          <option value="聞き耳:desc">聞き耳 高い順</option>
+          <option value="図書館:desc">図書館 高い順</option>
+          <option value="回避:desc">回避 高い順</option>
+          <option value="医学:desc">医学 高い順</option>
+          <option value="心理学:desc">心理学 高い順</option>
+          <option value="クトゥルフ神話:desc">クトゥルフ神話 高い順</option>
+        </optgroup>
+      </select>
+      <button class="btn sans" id="filterBtn">⚲ 技能で絞り込み<span class="fcount"></span></button>
+    </div>
+    <div class="grid" id="cardGrid"></div>
+  </div>
+
+  <!-- 詳細 -->
+  <div class="detail-wrap" id="detailWrap"></div>
+</main>
+
+<!-- フィルタシート -->
+<div class="scrim" id="filterScrim"></div>
+<div class="sheet" id="filterSheet">
+  <div class="sheet-grip"></div>
+  <div class="sheet-head">
+    <h3 class="sans">技能で絞り込み</h3>
+    <button class="btn btn-ghost sans" id="filterClose">閉じる</button>
+  </div>
+  <div class="sheet-body">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <span class="sans" style="font-size:12px;color:var(--ink-faint)">条件</span>
+      <div class="mode-toggle">
+        <button id="modeAnd" class="on">すべて持つ (AND)</button>
+        <button id="modeOr">いずれか持つ (OR)</button>
+      </div>
+    </div>
+    <div class="thresh-row sans">
+      <span>技能値</span>
+      <input type="range" id="threshRange" min="0" max="90" step="5" value="0">
+      <span id="threshVal" style="width:64px;text-align:right">0%以上</span>
+    </div>
+    <p class="sans" style="font-size:11px;color:var(--ink-faint);margin:6px 0 18px">※ 初期値から振り分けて習得している技能のみが対象です。数字は該当する探索者の人数。</p>
+    <div id="filterBody"></div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost sans" id="filterClear">クリア</button>
+    <button class="btn btn-primary sans" id="filterApply">この条件で表示</button>
+  </div>
+</div>
+
+<!-- ペーストモーダル -->
+<div class="modal-scrim" id="pasteModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="sans">テキスト出力から追加</h3>
+      <button class="btn btn-ghost sans" id="pasteClose">×</button>
+    </div>
+    <div class="modal-body">
+      <p>キャラクター保管所の「テキスト出力(txt)」の中身を全文貼り付けてください。同名の探索者が既にいる場合は上書き更新を選べます。</p>
+      <textarea class="paste" id="pasteArea" placeholder="タイトル：…&#10;キャラクター名：…&#10;■能力値■ …"></textarea>
+      <div id="pastePreview"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost sans" id="pasteCancel">キャンセル</button>
+      <button class="btn btn-primary sans" id="pasteSave">追加する</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importInput" accept="application/json,.json" class="hidden">
+<div class="toast" id="toast"></div>
+
+<!-- 削除確認ダイアログ(confirm非依存) -->
+<div class="modal-scrim" id="confirmModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-head">
+      <h3 class="sans">探索者を削除</h3>
+    </div>
+    <div class="modal-body">
+      <p id="confirmText" style="font-size:14px;color:var(--ink)">この探索者を削除しますか？</p>
+      <p class="sans" style="font-size:12px;color:var(--ink-faint);margin-top:8px">この操作は取り消せません。</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost sans" id="confirmCancel">キャンセル</button>
+      <button class="btn sans" id="confirmOk" style="background:var(--blood);border-color:var(--blood);color:#fff">削除する</button>
+    </div>
+  </div>
+</div>
+
+<!-- バックアップ救出モーダル -->
+<div class="modal-scrim" id="backupModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="sans">バックアップ</h3>
+      <button class="btn btn-ghost sans" id="backupClose">×</button>
+    </div>
+    <div class="modal-body">
+      <p>下のデータがあなたの全キャラクター情報です。<b style="color:var(--brass)">「コピー」を押してから、メモアプリやメール等に貼り付けて保存</b>してください。これがバックアップになります。</p>
+      <div class="toolbar" style="margin-bottom:10px">
+        <button class="btn btn-primary sans" id="backupCopy">📋 全文をコピー</button>
+        <button class="btn sans" id="backupDownload">⬇ ファイル保存も試す</button>
+      </div>
+      <textarea class="paste" id="backupArea" readonly style="min-height:200px"></textarea>
+      <p class="sans" id="backupSize" style="font-size:11px;color:var(--ink-faint);margin-top:8px"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost sans" id="backupDone">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 取り込みモーダル(ファイル選択 or 貼り付け) -->
+<div class="modal-scrim" id="importModalWrap">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="sans">データ取り込み</h3>
+      <button class="btn btn-ghost sans" id="importClose">×</button>
+    </div>
+    <div class="modal-body">
+      <p>バックアップのJSONを復元します。<b style="color:var(--brass)">ファイルを選ぶ</b>か、コピーしたJSONを<b style="color:var(--brass)">下に貼り付けて取り込み</b>を押してください。</p>
+      <div class="toolbar" style="margin-bottom:10px">
+        <button class="btn sans" id="importFileBtn">📁 ファイルを選ぶ</button>
+      </div>
+      <textarea class="paste" id="importArea" placeholder="ここにバックアップのJSONを貼り付け" style="min-height:160px"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost sans" id="importCancel">キャンセル</button>
+      <button class="btn btn-primary sans" id="importPasteBtn">貼り付けデータを取り込む</button>
+    </div>
+  </div>
+</div>
+
+<script>window.__SKILL_BASE__={"system":"CoC6","description":"クトゥルフ神話TRPG 第6版 技能初期値テーブル。initialが数値の技能は固定初期値。formulaを持つ技能は能力値依存(値はキャラ取り込み時に算出)。サブネーム付き技能(芸術/製作/操縦/母国語など)はbaseNameで束ねる。","categories":["戦闘系","探索系","行動系","交渉系","知識系"],"skills":[{"name":"回避","category":"戦闘系","initial":null,"formula":"DEX*2","note":"DEX×2が初期値"},{"name":"こぶし（パンチ）","category":"戦闘系","initial":50},{"name":"キック","category":"戦闘系","initial":25},{"name":"組み付き","category":"戦闘系","initial":25},{"name":"頭突き","category":"戦闘系","initial":10},{"name":"投擲","category":"戦闘系","initial":25},{"name":"マーシャルアーツ","category":"戦闘系","initial":1},{"name":"拳銃","category":"戦闘系","initial":20},{"name":"サブマシンガン","category":"戦闘系","initial":15},{"name":"ショットガン","category":"戦闘系","initial":30},{"name":"マシンガン","category":"戦闘系","initial":15},{"name":"ライフル","category":"戦闘系","initial":25},{"name":"杖","category":"戦闘系","initial":1,"note":"武道/特殊武器系。保管所の作成ツール由来で初期値は1扱い"},{"name":"応急手当","category":"探索系","initial":30},{"name":"鍵開け","category":"探索系","initial":1},{"name":"隠す","category":"探索系","initial":15},{"name":"隠れる","category":"探索系","initial":10},{"name":"聞き耳","category":"探索系","initial":25},{"name":"忍び歩き","category":"探索系","initial":10},{"name":"写真術","category":"探索系","initial":10},{"name":"精神分析","category":"探索系","initial":1},{"name":"追跡","category":"探索系","initial":10},{"name":"登攀","category":"探索系","initial":40},{"name":"図書館","category":"探索系","initial":25},{"name":"目星","category":"探索系","initial":25},{"name":"運転","category":"行動系","initial":20,"hasSubname":true,"note":"運転(自動車)が既定。サブネーム可"},{"name":"機械修理","category":"行動系","initial":20},{"name":"重機械操作","category":"行動系","initial":1},{"name":"乗馬","category":"行動系","initial":5},{"name":"水泳","category":"行動系","initial":25},{"name":"製作","category":"行動系","initial":5,"hasSubname":true},{"name":"操縦","category":"行動系","initial":1,"hasSubname":true},{"name":"跳躍","category":"行動系","initial":25},{"name":"電気修理","category":"行動系","initial":10},{"name":"ナビゲート","category":"行動系","initial":10},{"name":"変装","category":"行動系","initial":1},{"name":"言いくるめ","category":"交渉系","initial":5},{"name":"信用","category":"交渉系","initial":15},{"name":"説得","category":"交渉系","initial":15},{"name":"値切り","category":"交渉系","initial":5},{"name":"母国語","category":"交渉系","initial":null,"formula":"EDU*5","hasSubname":true,"note":"EDU×5が初期値。言語名サブネーム可"},{"name":"英語","category":"交渉系","initial":1,"note":"他国語としての英語。初期値1(母国語が英語の場合を除く)"},{"name":"医学","category":"知識系","initial":5},{"name":"オカルト","category":"知識系","initial":5},{"name":"化学","category":"知識系","initial":1},{"name":"クトゥルフ神話","category":"知識系","initial":0},{"name":"芸術","category":"知識系","initial":5,"hasSubname":true},{"name":"経理","category":"知識系","initial":10},{"name":"考古学","category":"知識系","initial":1},{"name":"コンピューター","category":"知識系","initial":1},{"name":"心理学","category":"知識系","initial":5},{"name":"人類学","category":"知識系","initial":1},{"name":"生物学","category":"知識系","initial":1},{"name":"地質学","category":"知識系","initial":1},{"name":"電子工学","category":"知識系","initial":1},{"name":"天文学","category":"知識系","initial":1},{"name":"博物学","category":"知識系","initial":10},{"name":"物理学","category":"知識系","initial":1},{"name":"法律","category":"知識系","initial":5},{"name":"薬学","category":"知識系","initial":1},{"name":"歴史","category":"知識系","initial":20}],"aliases":[{"canonical":"コンピューター","aliases":["コンピュータ","PC","ｺﾝﾋﾟｭｰﾀｰ"]},{"canonical":"こぶし（パンチ）","aliases":["こぶし","パンチ","こぶし(パンチ)"]},{"canonical":"母国語","aliases":["国語"]},{"canonical":"ナビゲート","aliases":["ナビ"]}]};
+window.__SEED__={"system":"CoC6","tag":"遺伝子の探索者","count":2,"characters":[{"charaId":"4536791","source":"https://charasheet.vampire-blood.net/4536791","title":"おとうと","name":"色ヶ谷 夢輝（いろがや ゆめき）","job":"ネイリスト","age":"29","sex":"男","origin":"日本","tags":["遺伝子の探索者"],"imageId":null,"stats":{"STR":12,"CON":5,"POW":16,"DEX":12,"APP":11,"SIZ":11,"INT":11,"EDU":15,"HP":8,"MP":16,"SAN_current":80,"SAN_max":99,"アイデア":55,"幸運":80,"知識":75,"DB":"0"},"skills":[{"name":"回避","subname":null,"value":24,"initial":24,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"キック","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"組み付き","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"こぶし（パンチ）","subname":"パンチ","value":50,"initial":50,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"頭突き","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"投擲","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"応急手当","subname":null,"value":30,"initial":30,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"鍵開け","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"隠す","subname":null,"value":15,"initial":15,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"隠れる","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"聞き耳","subname":null,"value":80,"initial":25,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"忍び歩き","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"写真術","subname":null,"value":70,"initial":10,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"精神分析","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"追跡","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"登攀","subname":null,"value":40,"initial":40,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"図書館","subname":null,"value":80,"initial":25,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"目星","subname":null,"value":80,"initial":25,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"言いくるめ","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"交渉系","known":true},{"name":"信用","subname":null,"value":70,"initial":15,"hasCheck":true,"isAllocated":true,"category":"交渉系","known":true},{"name":"説得","subname":null,"value":30,"initial":15,"hasCheck":true,"isAllocated":true,"category":"交渉系","known":true},{"name":"値切り","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"交渉系","known":true},{"name":"母国語","subname":null,"value":75,"initial":75,"hasCheck":false,"isAllocated":false,"category":"交渉系","known":true},{"name":"医学","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"オカルト","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"化学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"クトゥルフ神話","subname":null,"value":0,"initial":0,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"芸術","subname":"ネイルアート","value":65,"initial":5,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"経理","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"考古学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"コンピューター","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"心理学","subname":null,"value":60,"initial":5,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"歴史","subname":null,"value":20,"initial":20,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true}],"rawText":"タイトル：おとうと\n\nキャラクター名：色ヶ谷 夢輝（いろがや ゆめき）\n職業：ネイリスト\n年齢：29 / 性別：男\n出身：日本\n髪の色：藤色 / 瞳の色：鈍青 / 肌の色：白い\n身長：163cm\n体重：超軽い\n\n■能力値■\nHP：8\nMP：16\nSAN：80/99\n\n　　　　 STR　 CON　 POW　 DEX　 APP　 SIZ　 INT　 EDU　 HP　 MP\n作成時　　12　　 5　　16　　12　　11　　11　　11　　15　　 8　　16\n成長等\n他修正\n=合計=　　12　　 5　　16　　12　　11　　11　　11　　15　　 8　　16\n\n■技能■\n\n------------------------ 戦闘系技能 ------------------------\n習得/名前　　　　　　 現在値　習得/名前　　　 現在値　習得/名前　　　　　 現在値\n　《回避》　　　　　　24％　　　《キック》　　25％　　　《組み付き》　　　25％\n　《こぶし（パンチ）》50％　　　《頭突き》　　10％　　　《投擲》　　　　　25％\n\n------------------------ 探索系技能 ------------------------\n　《応急手当》30％　　　《鍵開け》　1％　　　 《隠す》　　15％\n　《隠れる》　10％　　●《聞き耳》　80％　　　《忍び歩き》10％\n●《写真術》　70％　　　《精神分析》1％　　　 《追跡》　　10％\n　《登攀》　　40％　　●《図書館》　80％　　●《目星》　　80％\n\n------------------------ 交渉系技能 ------------------------\n　《言いくるめ》5％　　 ●《信用》　　70％　　●《説得》30％\n　《値切り》　　5％　　　 《母国語()》75％　　　《》　　％\n\n------------------------ 知識系技能 ------------------------\n　《医学》　　　　　5％　　　 《オカルト》　　　　　5％　　　 《化学》　1％\n　《クトゥルフ神話》0％　　 ●《芸術(ネイルアート)》65％　　　《経理》　10％\n　《考古学》　　　　1％　　　 《コンピューター》　　1％　　 ●《心理学》60％\n　《歴史》　　　　　20％　　　《》　　　　　　　　　％　　　　《》　　　％\n\n■簡易用■\n色ヶ谷 夢輝（いろがや ゆめき）(男) 職業:ネイリスト 年齢:29　PL:\nSTR:12　　DEX:12　　INT:11　ｱｲﾃﾞｱ:55\nCON:5　　APP:11　　POW:16　　幸 運:80\nSIZ:11　SAN:99　EDU:15　知 識:75\nH P:8　　M P:16　　回避:dex*2　　ﾀﾞﾒｰｼﾞﾎﾞｰﾅｽ:0\n"},{"charaId":"5380082","source":"https://charasheet.vampire-blood.net/5380082","title":"サンエリオ","name":"エリオ・E・A・オフィウクス","job":"医療従事者（自称）","age":"26","sex":"男","origin":"日本","tags":["遺伝子の探索者"],"imageId":null,"stats":{"STR":9,"CON":10,"POW":18,"DEX":12,"APP":10,"SIZ":16,"INT":18,"EDU":20,"HP":13,"MP":18,"SAN_current":76,"SAN_max":76,"アイデア":90,"幸運":90,"知識":99,"DB":"1d4"},"skills":[{"name":"回避","subname":null,"value":73,"initial":24,"hasCheck":true,"isAllocated":true,"category":"戦闘系","known":true},{"name":"キック","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"組み付き","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"こぶし（パンチ）","subname":"パンチ","value":50,"initial":50,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"頭突き","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"投擲","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"マーシャルアーツ","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"拳銃","subname":null,"value":20,"initial":20,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"サブマシンガン","subname":null,"value":15,"initial":15,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"ショットガン","subname":null,"value":30,"initial":30,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"マシンガン","subname":null,"value":15,"initial":15,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"ライフル","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"戦闘系","known":true},{"name":"杖","subname":null,"value":75,"initial":1,"hasCheck":true,"isAllocated":true,"category":"戦闘系","known":true},{"name":"応急手当","subname":null,"value":30,"initial":30,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"鍵開け","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"隠す","subname":null,"value":15,"initial":15,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"隠れる","subname":null,"value":16,"initial":10,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"聞き耳","subname":null,"value":70,"initial":25,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"忍び歩き","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"写真術","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"精神分析","subname":null,"value":82,"initial":1,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"追跡","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"登攀","subname":null,"value":40,"initial":40,"hasCheck":false,"isAllocated":false,"category":"探索系","known":true},{"name":"図書館","subname":null,"value":61,"initial":25,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"目星","subname":null,"value":70,"initial":25,"hasCheck":true,"isAllocated":true,"category":"探索系","known":true},{"name":"運転","subname":null,"value":20,"initial":20,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"機械修理","subname":null,"value":20,"initial":20,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"重機械操作","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"乗馬","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"水泳","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"製作","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"操縦","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"跳躍","subname":null,"value":25,"initial":25,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"電気修理","subname":null,"value":18,"initial":10,"hasCheck":true,"isAllocated":true,"category":"行動系","known":true},{"name":"ナビゲート","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"変装","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"行動系","known":true},{"name":"言いくるめ","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"交渉系","known":true},{"name":"信用","subname":null,"value":51,"initial":15,"hasCheck":true,"isAllocated":true,"category":"交渉系","known":true},{"name":"説得","subname":null,"value":15,"initial":15,"hasCheck":false,"isAllocated":false,"category":"交渉系","known":true},{"name":"値切り","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"交渉系","known":true},{"name":"母国語","subname":"日本語","value":100,"initial":100,"hasCheck":false,"isAllocated":false,"category":"交渉系","known":true},{"name":"英語","subname":null,"value":65,"initial":1,"hasCheck":true,"isAllocated":true,"category":"交渉系","known":true},{"name":"医学","subname":null,"value":81,"initial":5,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"オカルト","subname":null,"value":60,"initial":5,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"化学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"クトゥルフ神話","subname":null,"value":23,"initial":0,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"芸術","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"経理","subname":null,"value":10,"initial":10,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"考古学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"コンピューター","subname":null,"value":18,"initial":1,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"心理学","subname":null,"value":10,"initial":5,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"人類学","subname":null,"value":6,"initial":1,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"生物学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"地質学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"電子工学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"天文学","subname":null,"value":75,"initial":1,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"博物学","subname":null,"value":20,"initial":10,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"物理学","subname":null,"value":1,"initial":1,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"法律","subname":null,"value":5,"initial":5,"hasCheck":false,"isAllocated":false,"category":"知識系","known":true},{"name":"薬学","subname":null,"value":70,"initial":1,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true},{"name":"歴史","subname":null,"value":23,"initial":20,"hasCheck":true,"isAllocated":true,"category":"知識系","known":true}],"rawText":"タイトル：サンエリオ\n\nキャラクター名：エリオ・E・A・オフィウクス\n職業：医療従事者（自称）\n年齢：26 / 性別：男\n出身：日本\n髪の色：黒 / 瞳の色：赤黄 / 肌の色：並\n身長：183\n体重：\n\n■能力値■\nHP：13\nMP：18\nSAN：76/76\n\n　　　　 STR　 CON　 POW　 DEX　 APP　 SIZ　 INT　 EDU　 HP　 MP\n作成時　　 9　　10　　18　　12　　10　　16　　18　　20　　13　　18\n成長等\n他修正\n=合計=　　 9　　10　　18　　12　　10　　16　　18　　20　　13　　18\n\n■技能■\n\n------------------------ 戦闘系技能 ------------------------\n習得/名前　　　　　　 現在値　習得/名前　　　 現在値　習得/名前　　　　　 現在値\n●《回避》　　　　　　73％　　　《キック》　　25％　　　《組み付き》　　　25％\n　《こぶし（パンチ）》50％　　　《頭突き》　　10％　　　《投擲》　　　　　25％\n　《マーシャルアーツ》1％　　　 《拳銃》　　　20％　　　《サブマシンガン》15％\n　《ショットガン》　　30％　　　《マシンガン》15％　　　《ライフル》　　　25％\n●《杖》　　　　　　　75％　　　《》　　　　　％　　　　《》　　　　　　　％\n\n\n------------------------ 探索系技能 ------------------------\n習得/名前　　 現在値　習得/名前　　 現在値　習得/名前　　 現在値\n　《応急手当》30％　　　《鍵開け》　1％　　　 《隠す》　　15％\n●《隠れる》　16％　　●《聞き耳》　70％　　　《忍び歩き》10％\n　《写真術》　10％　　●《精神分析》82％　　　《追跡》　　10％\n　《登攀》　　40％　　●《図書館》　61％　　●《目星》　　70％\n\n\n------------------------ 行動系技能 ------------------------\n習得/名前　　　 現在値　習得/名前　　 現在値　習得/名前　　　 現在値\n　《運転》　　　20％　　　《機械修理》20％　　　《重機械操作》1％\n　《乗馬》　　　5％　　　 《水泳》　　25％　　　《製作()》　　5％\n　《操縦()》　　1％　　　 《跳躍》　　25％　　●《電気修理》　18％\n　《ナビゲート》10％　　　《変装》　　1％　　　 《》　　　　　％\n\n\n------------------------ 交渉系技能 ------------------------\n習得/名前　　　 現在値　習得/名前　　　　　 現在値　習得/名前 現在値\n　《言いくるめ》5％　　 ●《信用》　　　　　51％　　　《説得》15％\n　《値切り》　　5％　　　 《母国語(日本語)》100％　 ●《英語》65％\n\n\n------------------------ 知識系技能 ------------------------\n習得/名前　　　　　 現在値　習得/名前　　　　　 現在値　習得/名前　 現在値\n●《医学》　　　　　81％　　●《オカルト》　　　60％　　　《化学》　1％\n●《クトゥルフ神話》23％　　　《芸術()》　　　　5％　　　 《経理》　10％\n　《考古学》　　　　1％　　 ●《コンピューター》18％　　●《心理学》10％\n●《人類学》　　　　6％　　　 《生物学》　　　　1％　　　 《地質学》1％\n　《電子工学》　　　1％　　 ●《天文学》　　　　75％　　●《博物学》20％\n　《物理学》　　　　1％　　　 《法律》　　　　　5％　　 ●《薬学》　70％\n●《歴史》　　　　　23％　　　《》　　　　　　　％　　　　《》　　　％\n\n\n■戦闘■\n\nダメージボーナス：1d4\n名称　成功率　ダメージ　射程　　攻撃回数　装弾数　耐久力　/ 備考\n杖　　　　70　1d8+1d4　　　　　　　　　　　　　　　　　　 /\n\n■簡易用■\nエリオ・E・A・オフィウクス(男) 職業:医療従事者（自称） 年齢:26　PL:\nSTR:9　　DEX:12　　INT:18　ｱｲﾃﾞｱ:90\nCON:10　　APP:10　　POW:18　　幸 運:90\nSIZ:16　SAN:76　EDU:20　知 識:99\nH P:13　　M P:18　　回避:dex*2　　ﾀﾞﾒｰｼﾞﾎﾞｰﾅｽ:1d4\n"}]};</script>
+<script>/* === CoC探索者DB アプリロジック === */
+(function(){
+"use strict";
+
+// ---- データ(ビルド時に差し込み) ----
+const SKILL_BASE = window.__SKILL_BASE__;
+const SEED = window.__SEED__ || null;
+
+// 技能マップ・別名マップ
+const skillMap = {};
+SKILL_BASE.skills.forEach(s=>skillMap[s.name]=s);
+const aliasMap = {};
+(SKILL_BASE.aliases||[]).forEach(a=>a.aliases.forEach(al=>aliasMap[al]=a.canonical));
+const CATEGORIES = SKILL_BASE.categories;
+
+// ---- IndexedDB ----
+const DB_NAME="coc_explorer_db", DB_VER=1;
+let db=null;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains("characters")) d.createObjectStore("characters",{keyPath:"id"});
+      if(!d.objectStoreNames.contains("images")) d.createObjectStore("images",{keyPath:"id"});
+    };
+    req.onsuccess=e=>{db=e.target.result;res(db)};
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+function tx(store,mode){return db.transaction(store,mode).objectStore(store);}
+function dbAll(store){return new Promise((res,rej)=>{const r=tx(store,"readonly").getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function dbPut(store,val){return new Promise((res,rej)=>{const r=tx(store,"readwrite").put(val);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+function dbGet(store,key){return new Promise((res,rej)=>{const r=tx(store,"readonly").get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function dbDel(store,key){return new Promise((res,rej)=>{const r=tx(store,"readwrite").delete(key);r.onsuccess=()=>res();r.onerror=()=>rej(r.error);});}
+
+// ---- パーサ(Python版coc_parserの移植) ----
+const SKILL_RE=/([●○]?)\s*《([^》]*)》\s*(\d+)\s*[％%]/g;
+
+function splitSubname(name){
+  const m=name.match(/^(.+?)[(（](.*?)[)）]\s*$/);
+  if(m){return [m[1].trim(), m[2].trim()||null];}
+  return [name,null];
+}
+function calcInitial(def,stats){
+  if(!def) return null;
+  if(def.formula){
+    let f=def.formula;
+    for(const k in stats) f=f.split(k).join(stats[k]);
+    try{ return Function('"use strict";return ('+f+')')(); }catch(e){return null;}
+  }
+  return def.initial;
+}
+function grab(re,text,def){const m=text.match(re);return m?m[1].trim():(def||"");}
+function toIntOrNull(s){return /^\d+$/.test(s)?parseInt(s,10):null;}
+
+function parseStats(text){
+  const stats={};
+  const m=text.match(/=合計=([^\n]*)/);
+  if(m){
+    const nums=(m[1].match(/-?\d+/g)||[]);
+    const keys=["STR","CON","POW","DEX","APP","SIZ","INT","EDU","HP","MP"];
+    keys.forEach((k,i)=>{ if(nums[i]!==undefined) stats[k]=parseInt(nums[i],10);});
+  }
+  const hp=grab(/HP：(\d+)/,text), mp=grab(/MP：(\d+)/,text), san=grab(/SAN：([\d/]+)/,text);
+  if(hp)stats.HP=parseInt(hp,10);
+  if(mp)stats.MP=parseInt(mp,10);
+  if(san){const p=san.split("/");stats.SAN_current=parseInt(p[0],10);stats.SAN_max=p[1]?parseInt(p[1],10):parseInt(p[0],10);}
+  stats["アイデア"]=toIntOrNull(grab(/ｱｲﾃﾞｱ:(\d+)/,text));
+  stats["幸運"]=toIntOrNull(grab(/幸\s*運:(\d+)/,text));
+  stats["知識"]=toIntOrNull(grab(/知\s*識:(\d+)/,text));
+  let db_=grab(/ﾀﾞﾒｰｼﾞﾎﾞｰﾅｽ:([^\n　]+)/,text)||grab(/ダメージボーナス：([^\n]+)/,text);
+  stats.DB=db_;
+  return stats;
+}
+function parseHeader(text){
+  const ageSex=grab(/年齢：(.*)/,text);
+  let age="",sex="";
+  const m=ageSex.match(/\s*(\d+)\s*\/?\s*性別：?(.*)/);
+  if(m){age=m[1];sex=m[2].trim();} else age=ageSex;
+  return {
+    title:grab(/タイトル：(.*)/,text),
+    name:grab(/キャラクター名：(.*)/,text),
+    job:grab(/職業：(.*)/,text),
+    age,sex,origin:grab(/出身：(.*)/,text),
+  };
+}
+function parseSkills(text,stats){
+  let seg=text;
+  const m=text.match(/■技能■([\s\S]*?)(?:■戦闘■|■所持品■|■その他■|■簡易用■|$)/);
+  if(m)seg=m[1];
+  const out=[],seen=new Set();
+  let mm;
+  SKILL_RE.lastIndex=0;
+  while((mm=SKILL_RE.exec(seg))!==null){
+    const mark=mm[1], rawName=mm[2].trim(), val=parseInt(mm[3],10);
+    if(!rawName)continue;
+    const [base,sub]=splitSubname(rawName);
+    const canon=aliasMap[base]||base;
+    const def=skillMap[canon];
+    const initial=calcInitial(def,stats);
+    const isAllocated=(initial!==null)&&(val>initial);
+    const key=canon+"|"+(sub||"");
+    if(seen.has(key))continue;
+    seen.add(key);
+    out.push({name:canon,subname:sub,value:val,initial,
+      hasCheck:(mark==="●"||mark==="○"),isAllocated,
+      category:def?def.category:"その他",known:!!def});
+  }
+  return out;
+}
+function parseCharacter(text,charaId,extra){
+  const h=parseHeader(text), stats=parseStats(text), skills=parseSkills(text,stats);
+  const c={
+    id:"c_"+(charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7)),
+    charaId:charaId||null,
+    source:charaId?("https://charasheet.vampire-blood.net/"+charaId):null,
+    title:h.title,name:h.name,job:h.job,age:h.age,sex:h.sex,origin:h.origin,
+    tags:[],imageId:null,stats,skills,rawText:text,
+    userTags:[],hasSpoiler:false,secretMemos:[],spells:"",creatures:"",
+    createdAt:Date.now(),updatedAt:Date.now(),
+  };
+  if(extra)Object.assign(c,extra);
+  return c;
+}
+
+// ---- 状態 ----
+let characters=[];
+let imageCache={}; // id -> objectURL
+let state={
+  sortKey:"updatedAt", sortDir:"desc",
+  filterSkills:new Set(), filterMode:"AND", threshold:0,
+  hideInitial:true,
+};
+
+// ---- ロード ----
+async function loadAll(){
+  characters=await dbAll("characters");
+  if(characters.length===0 && SEED){
+    // 初回シード(同梱サンプル)
+    for(const c of SEED.characters){
+      const ch=parseCharacter(c.rawText,c.charaId,{tags:c.tags||[]});
+      await dbPut("characters",ch);
+    }
+    characters=await dbAll("characters");
+  }
+  // 画像URL復元
+  const imgs=await dbAll("images");
+  imgs.forEach(im=>{ imageCache[im.id]=URL.createObjectURL(im.blob); });
+  // 新フィールドの補完(既存データへの後付け)
+  for(const c of characters){
+    let changed=false;
+    if(!Array.isArray(c.userTags)){c.userTags=[];changed=true;}
+    if(typeof c.hasSpoiler!=="boolean"){c.hasSpoiler=false;changed=true;}
+    if(!Array.isArray(c.secretMemos)){c.secretMemos=[];changed=true;}
+    if(typeof c.spells!=="string"){c.spells="";changed=true;}
+    if(typeof c.creatures!=="string"){c.creatures="";changed=true;}
+    if(changed)await dbPut("characters",c);
+  }
+}
+
+// キャラに新フィールドを保証して保存
+async function saveCharacter(c){
+  c.updatedAt=Date.now();
+  await dbPut("characters",c);
+}
+
+// ---- 表示: 一覧 ----
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+
+function statVal(c,key){
+  if(key in (c.stats||{})) return c.stats[key];
+  // 技能値ソート
+  const sk=c.skills.find(s=>s.name===key);
+  return sk?sk.value:null;
+}
+function passFilter(c){
+  if(state.filterSkills.size===0)return true;
+  const owned=new Set(c.skills.filter(s=>s.isAllocated && s.value>=state.threshold).map(s=>s.name));
+  const arr=Array.from(state.filterSkills);
+  if(state.filterMode==="AND")return arr.every(n=>owned.has(n));
+  return arr.some(n=>owned.has(n));
+}
+function sortChars(list){
+  const k=state.sortKey, dir=state.sortDir==="asc"?1:-1;
+  return list.slice().sort((a,b)=>{
+    if(k==="updatedAt")return (a.updatedAt-b.updatedAt)*dir;
+    if(k==="name")return a.name.localeCompare(b.name,"ja")*dir;
+    let va=statVal(a,k), vb=statVal(b,k);
+    // 技能を持たない(null)は常に末尾
+    if(va===null&&vb===null)return 0;
+    if(va===null)return 1;
+    if(vb===null)return -1;
+    return (va-vb)*dir;
+  });
+}
+function renderList(){
+  const wrap=$("#cardGrid");
+  let list=characters.filter(passFilter);
+  list=sortChars(list);
+  $("#countPill").textContent=list.length+" / "+characters.length+" 体";
+  if(list.length===0){
+    wrap.innerHTML='<div class="empty"><div class="rune">⸸</div>'+
+      (characters.length===0?'まだ探索者がいません。<br>「テキスト追加」かJSON取り込みで記録を始めましょう。'
+        :'条件に合う探索者はいません。<br>フィルタを見直してください。')+'</div>';
+    return;
+  }
+  const showSkillVal=!(state.sortKey in {updatedAt:1,name:1,STR:1,CON:1,POW:1,DEX:1,APP:1,SIZ:1,INT:1,EDU:1,HP:1,MP:1});
+  wrap.innerHTML=list.map(c=>{
+    const thumb=c.imageId&&imageCache[c.imageId]
+      ? `<img class="card-thumb" src="${imageCache[c.imageId]}" alt="">`
+      : `<div class="card-thumb">⌖</div>`;
+    const allocCount=c.skills.filter(s=>s.isAllocated).length;
+    let keyChip="";
+    if(showSkillVal){
+      const v=statVal(c,state.sortKey);
+      keyChip=`<span class="stat-chip sort-key-badge">${state.sortKey} <b>${v===null?"—":v}</b></span>`;
+    }
+    const spoiler=c.hasSpoiler?`<span class="spoiler-badge" title="ネタバレ注意">⚠</span>`:"";
+    const utags=(c.userTags&&c.userTags.length)
+      ? `<div class="card-tags">${c.userTags.map(t=>`<span class="mini-tag">${esc(t)}</span>`).join("")}</div>`:"";
+    return `<div class="card" data-id="${c.id}">
+      ${thumb}
+      <div class="card-body">
+        <div class="card-title">${spoiler}${esc(c.title||c.name||"無題")}</div>
+        <div class="card-name">${esc(c.name||"")}</div>
+        <div class="card-meta">${esc(c.job||"")}${c.age?" ／ "+esc(c.age)+"歳":""}</div>
+        ${utags}
+        <div class="card-stats">
+          ${keyChip}
+          <span class="stat-chip">SAN <b>${c.stats.SAN_current??"—"}</b></span>
+          <span class="stat-chip">習得技能 <b>${allocCount}</b></span>
+        </div>
+      </div>
+      <button class="card-del" data-del="${c.id}" aria-label="削除" title="削除">✕</button>
+    </div>`;
+  }).join("");
+  $$("#cardGrid .card").forEach(el=>{
+    el.addEventListener("click",e=>{
+      if(e.target.closest(".card-del"))return; // 削除ボタンは別処理
+      openDetail(el.dataset.id);
+    });
+  });
+  $$("#cardGrid .card-del").forEach(el=>{
+    el.addEventListener("click",e=>{
+      e.stopPropagation();
+      deleteCharacter(el.dataset.del);
+    });
+  });
+}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
+
+// ---- 表示: 詳細 ----
+let currentDetailId=null;
+function openDetail(id){
+  const c=characters.find(x=>x.id===id);
+  if(!c)return;
+  currentDetailId=id;
+  closeFilter();
+  document.body.classList.add("detail-mode");
+  window.scrollTo(0,0);
+  const portrait=c.imageId&&imageCache[c.imageId]
+    ? `<img class="detail-portrait" src="${imageCache[c.imageId]}" alt="">`
+    : `<div class="detail-portrait">⌖</div>`;
+  const S=c.stats;
+  const statBoxes=[["STR","STR"],["CON","CON"],["POW","POW"],["DEX","DEX"],
+    ["APP","APP"],["SIZ","SIZ"],["INT","INT"],["EDU","EDU"]]
+    .map(([k,l])=>`<div class="stat-box"><div class="k">${l}</div><div class="v">${S[k]??"—"}</div></div>`).join("");
+  const derived=[
+    `<div class="stat-box derived"><div class="k">HP</div><div class="v">${S.HP??"—"}</div></div>`,
+    `<div class="stat-box derived"><div class="k">MP</div><div class="v">${S.MP??"—"}</div></div>`,
+    `<div class="stat-box san"><div class="k">SAN</div><div class="v">${S.SAN_current??"—"}<span style="font-size:12px;color:var(--ink-faint)">/${S.SAN_max??"—"}</span></div></div>`,
+    `<div class="stat-box derived"><div class="k">DB</div><div class="v" style="font-size:15px">${esc(S.DB||"—")}</div></div>`,
+    `<div class="stat-box"><div class="k">幸運</div><div class="v">${S["幸運"]??"—"}</div></div>`,
+    `<div class="stat-box"><div class="k">アイデア</div><div class="v">${S["アイデア"]??"—"}</div></div>`,
+    `<div class="stat-box"><div class="k">知識</div><div class="v">${S["知識"]??"—"}</div></div>`,
+  ].join("");
+
+  // 技能(カテゴリ順)
+  const byCat={};
+  CATEGORIES.concat(["その他"]).forEach(cat=>byCat[cat]=[]);
+  c.skills.forEach(s=>{(byCat[s.category]||byCat["その他"]).push(s);});
+  let skillHtml="";
+  CATEGORIES.concat(["その他"]).forEach(cat=>{
+    const arr=byCat[cat];if(!arr||!arr.length)return;
+    const rows=arr.map(s=>{
+      const cls=s.isAllocated?"allocated":"initial";
+      const hideCls=(!s.isAllocated)?"hidden-initial":"";
+      const sub=s.subname?`<span class="sub">（${esc(s.subname)}）</span>`:"";
+      const mark=s.isAllocated?"◆":"";
+      return `<div class="skill-row ${cls} ${hideCls}">
+        <span class="mark">${mark}</span>
+        <span class="sn">${esc(s.name)}${sub}</span>
+        <span class="sv">${s.value}%</span></div>`;
+    }).join("");
+    skillHtml+=`<div class="section-label sans">${cat}</div><div class="skill-list">${rows}</div>`;
+  });
+
+  const tags=(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
+  const memo=extractMemo(c.rawText);
+  const userTagChips=(c.userTags||[]).map((t,i)=>
+    `<span class="utag">${esc(t)}<button class="utag-x" data-tagidx="${i}">×</button></span>`).join("");
+
+  $("#detailWrap").innerHTML=`
+    <button class="back-btn sans" id="backBtn">‹ 一覧へ戻る</button>
+    <div class="detail-head">
+      ${portrait}
+      <div style="flex:1;min-width:0">
+        <div class="detail-title">${c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':''}${esc(c.title||c.name||"無題")}</div>
+        <div class="detail-name">${esc(c.name||"")}</div>
+        <div class="detail-sub sans">
+          ${esc(c.job||"")}${c.age?" ／ "+esc(c.age)+"歳":""}${c.sex?" ／ "+esc(c.sex):""}<br>
+          ${c.origin?"出身："+esc(c.origin)+"　":""}
+          ${c.source?`<a href="${c.source}" target="_blank" rel="noopener">保管所で開く ↗</a>`:""}
+        </div>
+        ${tags?`<div class="tag-row">${tags}</div>`:""}
+      </div>
+    </div>
+
+    <div class="spoiler-toggle-row sans">
+      <div class="toggle ${c.hasSpoiler?'on':''}" id="spoilerToggle"></div>
+      <span>⚠ ネタバレ注意マークをつける</span>
+    </div>
+
+    <div class="section-label sans">タグ</div>
+    <div class="utag-row" id="utagRow">${userTagChips||'<span class="sans" style="color:var(--ink-faint);font-size:12px">タグなし</span>'}</div>
+    <div class="utag-add sans">
+      <input type="text" id="utagInput" placeholder="タグを入力" maxlength="20">
+      <button class="btn sans" id="utagAddBtn">追加</button>
+    </div>
+
+    <div class="toolbar" style="margin-top:18px">
+      <button class="btn sans" id="addImgBtn">⌖ 画像を追加</button>
+      ${c.imageId?'<button class="btn btn-ghost sans" id="rmImgBtn">画像を削除</button>':''}
+      <button class="btn btn-ghost sans" id="delCharBtn" style="margin-left:auto;color:var(--blood)">この探索者を削除</button>
+    </div>
+
+    <div class="section-label sans">能力値</div>
+    <div class="stat-grid">${statBoxes}</div>
+    <div class="stat-grid" style="margin-top:8px">${derived}</div>
+
+    <div class="skill-toggle-row sans" style="margin-top:24px">
+      <div class="toggle ${state.hideInitial?'':'on'}" id="initToggle"></div>
+      <span>初期値のままの技能を${state.hideInitial?'隠す':'表示'}</span>
+      <span style="margin-left:auto;color:var(--ink-faint)">◆=習得</span>
+    </div>
+    ${skillHtml}
+
+    <div class="section-label sans">覚えている魔術</div>
+    <textarea class="lore-area" id="spellsArea" placeholder="習得した魔術を記入（例：クトゥルフの招来／contact、暗示 など）">${esc(c.spells||"")}</textarea>
+
+    <div class="section-label sans">出会った神話生物</div>
+    <textarea class="lore-area" id="creaturesArea" placeholder="遭遇した神話生物・神格を記入">${esc(c.creatures||"")}</textarea>
+
+    <div class="section-label sans">秘匿メモ</div>
+    <div id="secretMemoList"></div>
+    <button class="btn sans" id="addMemoBtn" style="margin-top:4px">＋ 秘匿メモを追加</button>
+
+    ${memo?`<div class="section-label sans">メモ（保管所）</div><div class="memo">${esc(memo)}</div>`:""}
+    <input type="file" id="imgInput" accept="image/*" class="hidden">
+  `;
+  applyInitVisibility();
+  renderSecretMemos(c);
+  bindDetailEvents(c);
+}
+
+// 詳細ページのイベント束ね
+function bindDetailEvents(c){
+  $("#backBtn").addEventListener("click",closeDetail);
+  $("#initToggle").addEventListener("click",toggleInit);
+  $("#addImgBtn").addEventListener("click",()=>$("#imgInput").click());
+  $("#imgInput").addEventListener("change",onImagePick);
+  const rm=$("#rmImgBtn");if(rm)rm.addEventListener("click",removeImage);
+  $("#delCharBtn").addEventListener("click",deleteCurrent);
+
+  // ネタバレトグル
+  $("#spoilerToggle").addEventListener("click",async()=>{
+    c.hasSpoiler=!c.hasSpoiler;
+    $("#spoilerToggle").classList.toggle("on",c.hasSpoiler);
+    // タイトルの⚠も即時反映
+    const titleEl=$("#detailWrap .detail-title");
+    titleEl.innerHTML=(c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':'')+esc(c.title||c.name||"無題");
+    await saveCharacter(c);
+    toast(c.hasSpoiler?"ネタバレ注意をつけました":"ネタバレ注意を外しました");
+  });
+
+  // タグ追加
+  const addTag=async()=>{
+    const v=$("#utagInput").value.trim();
+    if(!v)return;
+    if(!c.userTags.includes(v))c.userTags.push(v);
+    $("#utagInput").value="";
+    await saveCharacter(c);
+    refreshUtags(c);
+  };
+  $("#utagAddBtn").addEventListener("click",addTag);
+  $("#utagInput").addEventListener("keydown",e=>{if(e.key==="Enter")addTag();});
+  $("#utagRow").addEventListener("click",async e=>{
+    const b=e.target.closest(".utag-x");if(!b)return;
+    c.userTags.splice(parseInt(b.dataset.tagidx,10),1);
+    await saveCharacter(c);
+    refreshUtags(c);
+  });
+
+  // 魔術・神話生物(入力が止まったら保存)
+  let st,ct;
+  $("#spellsArea").addEventListener("input",e=>{
+    clearTimeout(st);st=setTimeout(async()=>{c.spells=e.target.value;await saveCharacter(c);},500);
+  });
+  $("#creaturesArea").addEventListener("input",e=>{
+    clearTimeout(ct);ct=setTimeout(async()=>{c.creatures=e.target.value;await saveCharacter(c);},500);
+  });
+
+  // 秘匿メモ追加
+  $("#addMemoBtn").addEventListener("click",async()=>{
+    c.secretMemos.push({title:"",body:"",open:true});
+    await saveCharacter(c);
+    renderSecretMemos(c);
+  });
+}
+
+function refreshUtags(c){
+  const chips=(c.userTags||[]).map((t,i)=>
+    `<span class="utag">${esc(t)}<button class="utag-x" data-tagidx="${i}">×</button></span>`).join("");
+  $("#utagRow").innerHTML=chips||'<span class="sans" style="color:var(--ink-faint);font-size:12px">タグなし</span>';
+}
+
+// 秘匿メモの描画(折りたたみ式・複数)
+function renderSecretMemos(c){
+  const wrap=$("#secretMemoList");
+  if(!c.secretMemos||c.secretMemos.length===0){
+    wrap.innerHTML='<p class="sans" style="color:var(--ink-faint);font-size:12px;margin-bottom:8px">秘匿メモはまだありません。下のボタンから追加できます。</p>';
+    return;
+  }
+  wrap.innerHTML=c.secretMemos.map((m,i)=>`
+    <div class="secret-memo ${m.open?'open':''}" data-idx="${i}">
+      <div class="secret-head">
+        <button class="secret-toggle" data-toggle="${i}">${m.open?'▼':'▶'}</button>
+        <input class="secret-title" data-title="${i}" value="${esc(m.title||'')}" placeholder="見出し（例：HO、正体、真相）">
+        <button class="secret-del" data-memodel="${i}" title="削除">✕</button>
+      </div>
+      <div class="secret-body-wrap">
+        <textarea class="secret-body" data-body="${i}" placeholder="伏せておきたい内容を記入">${esc(m.body||'')}</textarea>
+      </div>
+    </div>`).join("");
+
+  // 折りたたみ
+  wrap.querySelectorAll(".secret-toggle").forEach(b=>b.addEventListener("click",async()=>{
+    const i=parseInt(b.dataset.toggle,10);
+    c.secretMemos[i].open=!c.secretMemos[i].open;
+    await saveCharacter(c);
+    renderSecretMemos(c);
+  }));
+  // 見出し編集
+  wrap.querySelectorAll(".secret-title").forEach(inp=>{
+    let t;inp.addEventListener("input",e=>{clearTimeout(t);t=setTimeout(async()=>{
+      c.secretMemos[parseInt(inp.dataset.title,10)].title=e.target.value;await saveCharacter(c);},500);});
+  });
+  // 本文編集
+  wrap.querySelectorAll(".secret-body").forEach(inp=>{
+    let t;inp.addEventListener("input",e=>{clearTimeout(t);t=setTimeout(async()=>{
+      c.secretMemos[parseInt(inp.dataset.body,10)].body=e.target.value;await saveCharacter(c);},500);});
+  });
+  // 削除
+  wrap.querySelectorAll(".secret-del").forEach(b=>b.addEventListener("click",async()=>{
+    const i=parseInt(b.dataset.memodel,10);
+    const ok=await askConfirm("この秘匿メモを削除しますか？");
+    if(!ok)return;
+    c.secretMemos.splice(i,1);
+    await saveCharacter(c);
+    renderSecretMemos(c);
+  }));
+}
+function applyInitVisibility(){
+  document.body.classList.toggle("show-initial",!state.hideInitial);
+}
+function toggleInit(){
+  state.hideInitial=!state.hideInitial;
+  $("#initToggle").classList.toggle("on",!state.hideInitial);
+  $("#initToggle").nextElementSibling.textContent="初期値のままの技能を"+(state.hideInitial?"隠す":"表示");
+  applyInitVisibility();
+}
+function closeDetail(){document.body.classList.remove("detail-mode");currentDetailId=null;renderList();}
+function extractMemo(raw){
+  if(!raw)return "";
+  const m=raw.match(/メモ：([\s\S]*?)(?:\n■|■簡易用■|$)/);
+  if(m)return m[1].trim();
+  return "";
+}
+
+// ---- 画像 ----
+async function onImagePick(e){
+  const file=e.target.files[0];if(!file)return;
+  const blob=await compressImage(file,640);
+  const c=characters.find(x=>x.id===currentDetailId);
+  const imgId="img_"+c.id;
+  await dbPut("images",{id:imgId,blob});
+  if(imageCache[imgId])URL.revokeObjectURL(imageCache[imgId]);
+  imageCache[imgId]=URL.createObjectURL(blob);
+  c.imageId=imgId;c.updatedAt=Date.now();
+  await dbPut("characters",c);
+  toast("画像を追加しました");
+  openDetail(c.id);
+}
+async function removeImage(){
+  const c=characters.find(x=>x.id===currentDetailId);
+  if(c.imageId){await dbDel("images",c.imageId);
+    if(imageCache[c.imageId]){URL.revokeObjectURL(imageCache[c.imageId]);delete imageCache[c.imageId];}
+    c.imageId=null;c.updatedAt=Date.now();await dbPut("characters",c);}
+  toast("画像を削除しました");
+  openDetail(c.id);
+}
+function compressImage(file,maxSide){
+  return new Promise((res)=>{
+    const img=new Image();
+    img.onload=()=>{
+      let{width:w,height:h}=img;
+      const scale=Math.min(1,maxSide/Math.max(w,h));
+      w=Math.round(w*scale);h=Math.round(h*scale);
+      const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+      cv.getContext("2d").drawImage(img,0,0,w,h);
+      cv.toBlob(b=>res(b),"image/jpeg",0.82);
+    };
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+async function removeCharacter(c){
+  // 実削除(確認は呼び出し側で済ませる)
+  if(c.imageId){await dbDel("images",c.imageId);if(imageCache[c.imageId])URL.revokeObjectURL(imageCache[c.imageId]);}
+  await dbDel("characters",c.id);
+  characters=characters.filter(x=>x.id!==c.id);
+}
+
+// confirm() に依存しないアプリ内確認ダイアログ
+let _confirmResolve=null;
+function askConfirm(message){
+  return new Promise(res=>{
+    _confirmResolve=res;
+    $("#confirmText").textContent=message;
+    $("#confirmModal").classList.add("open");
+  });
+}
+function _closeConfirm(result){
+  $("#confirmModal").classList.remove("open");
+  const r=_confirmResolve;_confirmResolve=null;
+  if(r)r(result);
+}
+
+async function deleteCharacter(id){
+  // 一覧カードからの削除
+  const c=characters.find(x=>x.id===id);
+  if(!c)return;
+  const ok=await askConfirm(`「${c.title||c.name}」を削除しますか？`);
+  if(!ok)return;
+  await removeCharacter(c);
+  toast("削除しました");
+  renderList();
+}
+
+async function deleteCurrent(){
+  // 詳細ページからの削除
+  const c=characters.find(x=>x.id===currentDetailId);
+  if(!c)return;
+  const ok=await askConfirm(`「${c.title||c.name}」を削除しますか？`);
+  if(!ok)return;
+  await removeCharacter(c);
+  toast("削除しました");
+  closeDetail();
+}
+
+// ---- 追加(ペースト) ----
+function openPaste(){$("#pasteModal").classList.add("open");$("#pasteArea").value="";$("#pastePreview").innerHTML="";}
+function closePaste(){$("#pasteModal").classList.remove("open");}
+function previewPaste(){
+  const txt=$("#pasteArea").value;
+  if(!txt.trim()){$("#pastePreview").innerHTML="";return;}
+  try{
+    const c=parseCharacter(txt,null,{});
+    const alloc=c.skills.filter(s=>s.isAllocated).length;
+    $("#pastePreview").innerHTML=`<div class="preview-box">
+      <b>${esc(c.title||c.name||"無題")}</b> / ${esc(c.name||"")}<br>
+      ${esc(c.job||"職業未設定")} ／ ${c.age||"?"}歳<br>
+      能力値 STR${c.stats.STR??"?"} CON${c.stats.CON??"?"} … 　習得技能 ${alloc}件</div>`;
+    return c;
+  }catch(e){
+    $("#pastePreview").innerHTML=`<div class="preview-box" style="border-color:var(--blood)">解析に失敗しました。テキスト出力の全文を貼り付けているか確認してください。</div>`;
+    return null;
+  }
+}
+async function savePaste(){
+  const txt=$("#pasteArea").value;
+  if(!txt.trim()){toast("テキストが空です");return;}
+  const c=parseCharacter(txt,null,{});
+  if(!c.name&&!c.title){toast("名前を取得できませんでした");return;}
+  // 同名(同タイトル)があれば上書き確認
+  const dup=characters.find(x=>(x.title&&x.title===c.title)||(x.name&&x.name===c.name));
+  if(dup){
+    if(confirm(`「${dup.title||dup.name}」は既に登録されています。上書き更新しますか？\n(キャンセルで別キャラとして追加)`)){
+      c.id=dup.id;c.imageId=dup.imageId;c.tags=dup.tags;c.createdAt=dup.createdAt;
+    }
+  }
+  await dbPut("characters",c);
+  characters=await dbAll("characters");
+  closePaste();
+  toast(dup?"更新しました":"探索者を追加しました");
+  renderList();
+}
+
+// ---- インポート/エクスポート ----
+let _backupJSON="";
+async function exportJSON(){
+  const imgs=await dbAll("images");
+  const imgMap={};
+  for(const im of imgs){imgMap[im.id]=await blobToDataURL(im.blob);}
+  const data={system:"CoC6",exportedAt:new Date().toISOString(),
+    characters,images:imgMap};
+  _backupJSON=JSON.stringify(data);
+  // モーダルに表示
+  $("#backupArea").value=_backupJSON;
+  const kb=Math.round(_backupJSON.length/1024);
+  $("#backupSize").textContent=`${characters.length}体 / 約${kb}KB　※このテキスト全体が必要です`;
+  $("#backupModal").classList.add("open");
+}
+async function copyBackup(){
+  try{
+    await navigator.clipboard.writeText(_backupJSON);
+    toast("コピーしました。メモ等に貼り付けて保存を");
+  }catch(e){
+    // クリップボードAPIが使えない環境向けフォールバック
+    const ta=$("#backupArea");
+    ta.removeAttribute("readonly");
+    ta.focus();ta.select();ta.setSelectionRange(0,_backupJSON.length);
+    try{document.execCommand("copy");toast("コピーしました");}
+    catch(e2){toast("長押しして全選択→コピーしてください");}
+    ta.setAttribute("readonly","");
+  }
+}
+function downloadBackup(){
+  try{
+    const blob=new Blob([_backupJSON],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="coc_explorers_backup_"+new Date().toISOString().slice(0,10)+".json";
+    document.body.appendChild(a);a.click();a.remove();
+    toast("保存を試みました(できない場合はコピーを使用)");
+  }catch(e){toast("この環境では保存不可。コピーを使ってください");}
+}
+function blobToDataURL(blob){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(blob);});}
+function dataURLtoBlob(d){const[meta,b64]=d.split(",");const mime=meta.match(/:(.*?);/)[1];const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime});}
+
+async function importJSON(file){
+  const text=await file.text();
+  await importJSONText(text);
+}
+async function importJSONText(text){
+  if(!text||!text.trim()){toast("データが空です");return;}
+  let data;try{data=JSON.parse(text);}catch(e){toast("JSONの読み込みに失敗(データが不完全かも)");return;}
+  // 抽出スクリプト出力(characters[] with rawText) / バックアップ(images付き) 両対応
+  const list=data.characters||[];
+  let n=0;
+  for(const raw of list){
+    let c;
+    if(raw.skills&&raw.stats&&raw.id){ c=raw; } // バックアップ形式(完成済み)
+    else { c=parseCharacter(raw.rawText||"",raw.charaId,{tags:raw.tags||[]}); }
+    if(!c.id)c.id="c_"+(c.charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7));
+    // 新フィールド補完(古いバックアップ対応)
+    if(!Array.isArray(c.userTags))c.userTags=[];
+    if(typeof c.hasSpoiler!=="boolean")c.hasSpoiler=false;
+    if(!Array.isArray(c.secretMemos))c.secretMemos=[];
+    if(typeof c.spells!=="string")c.spells="";
+    if(typeof c.creatures!=="string")c.creatures="";
+    await dbPut("characters",c);n++;
+  }
+  if(data.images){
+    for(const id in data.images){
+      const blob=dataURLtoBlob(data.images[id]);
+      await dbPut("images",{id,blob});
+      if(imageCache[id])URL.revokeObjectURL(imageCache[id]);
+      imageCache[id]=URL.createObjectURL(blob);
+    }
+  }
+  characters=await dbAll("characters");
+  $("#importModalWrap").classList.remove("open");
+  toast(n+"体を取り込みました");
+  renderList();
+}
+
+// ---- フィルタシート ----
+function buildFilterSheet(){
+  // 全キャラの習得技能を集計
+  const counts={};
+  characters.forEach(c=>c.skills.filter(s=>s.isAllocated).forEach(s=>{counts[s.name]=(counts[s.name]||0)+1;}));
+  const body=$("#filterBody");
+  let html="";
+  CATEGORIES.forEach(cat=>{
+    const inCat=SKILL_BASE.skills.filter(s=>s.category===cat && counts[s.name]);
+    if(!inCat.length)return;
+    html+=`<div class="skillcat"><h4>${cat}</h4><div class="skill-checks">`;
+    inCat.sort((a,b)=>counts[b.name]-counts[a.name]);
+    inCat.forEach(s=>{
+      const on=state.filterSkills.has(s.name)?"on":"";
+      html+=`<span class="skill-chk ${on}" data-skill="${esc(s.name)}">${esc(s.name)}<span class="cnt">${counts[s.name]}</span></span>`;
+    });
+    html+=`</div></div>`;
+  });
+  body.innerHTML=html||'<p class="sans" style="color:var(--ink-faint)">習得技能のある探索者がいません。</p>';
+  $$("#filterBody .skill-chk").forEach(el=>el.addEventListener("click",()=>{
+    const n=el.dataset.skill;
+    if(state.filterSkills.has(n))state.filterSkills.delete(n);else state.filterSkills.add(n);
+    el.classList.toggle("on");
+  }));
+  // モード・しきい値
+  $("#modeAnd").classList.toggle("on",state.filterMode==="AND");
+  $("#modeOr").classList.toggle("on",state.filterMode==="OR");
+  $("#threshRange").value=state.threshold;
+  $("#threshVal").textContent=state.threshold+"%以上";
+}
+function openFilter(){buildFilterSheet();$("#filterScrim").classList.add("open");$("#filterSheet").classList.add("open");}
+function closeFilter(){$("#filterScrim").classList.remove("open");$("#filterSheet").classList.remove("open");}
+function applyFilter(){
+  updateFilterBadge();closeFilter();renderList();
+}
+function clearFilter(){state.filterSkills.clear();state.threshold=0;buildFilterSheet();}
+function updateFilterBadge(){
+  const btn=$("#filterBtn");
+  const n=state.filterSkills.size;
+  btn.classList.toggle("filter-active",n>0);
+  btn.querySelector(".fcount").textContent=n>0?` (${n})`:"";
+}
+
+// ---- ソート ----
+function applySort(){
+  const v=$("#sortSelect").value;
+  const[key,dir]=v.split(":");
+  state.sortKey=key;state.sortDir=dir;
+  renderList();
+}
+
+// ---- トースト ----
+let toastTimer=null;
+function toast(msg){
+  const t=$("#toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+// ---- 初期化 ----
+async function init(){
+  await openDB();
+  await loadAll();
+  // ソート選択肢生成(能力値+主要技能)
+  renderList();
+
+  $("#pasteBtn").addEventListener("click",openPaste);
+  $("#pasteClose").addEventListener("click",closePaste);
+  $("#pasteCancel").addEventListener("click",closePaste);
+  $("#pasteArea").addEventListener("input",previewPaste);
+  $("#pasteSave").addEventListener("click",savePaste);
+
+  $("#importBtn").addEventListener("click",()=>{$("#importArea").value="";$("#importModalWrap").classList.add("open");});
+  $("#importInput").addEventListener("change",e=>{if(e.target.files[0])importJSON(e.target.files[0]);e.target.value="";});
+  $("#importFileBtn").addEventListener("click",()=>$("#importInput").click());
+  $("#importPasteBtn").addEventListener("click",()=>importJSONText($("#importArea").value));
+  $("#importClose").addEventListener("click",()=>$("#importModalWrap").classList.remove("open"));
+  $("#importCancel").addEventListener("click",()=>$("#importModalWrap").classList.remove("open"));
+  $("#importModalWrap").addEventListener("click",e=>{if(e.target.id==="importModalWrap")$("#importModalWrap").classList.remove("open");});
+  $("#exportBtn").addEventListener("click",exportJSON);
+  $("#backupCopy").addEventListener("click",copyBackup);
+  $("#backupDownload").addEventListener("click",downloadBackup);
+  $("#backupClose").addEventListener("click",()=>$("#backupModal").classList.remove("open"));
+  $("#backupDone").addEventListener("click",()=>$("#backupModal").classList.remove("open"));
+  $("#backupModal").addEventListener("click",e=>{if(e.target.id==="backupModal")$("#backupModal").classList.remove("open");});
+
+  // 削除確認ダイアログ
+  $("#confirmCancel").addEventListener("click",()=>_closeConfirm(false));
+  $("#confirmOk").addEventListener("click",()=>_closeConfirm(true));
+  $("#confirmModal").addEventListener("click",e=>{if(e.target.id==="confirmModal")_closeConfirm(false);});
+
+  $("#filterBtn").addEventListener("click",openFilter);
+  $("#filterScrim").addEventListener("click",closeFilter);
+  $("#filterClose").addEventListener("click",closeFilter);
+  $("#filterApply").addEventListener("click",applyFilter);
+  $("#filterClear").addEventListener("click",clearFilter);
+  $("#modeAnd").addEventListener("click",()=>{state.filterMode="AND";$("#modeAnd").classList.add("on");$("#modeOr").classList.remove("on");});
+  $("#modeOr").addEventListener("click",()=>{state.filterMode="OR";$("#modeOr").classList.add("on");$("#modeAnd").classList.remove("on");});
+  $("#threshRange").addEventListener("input",e=>{state.threshold=parseInt(e.target.value,10);$("#threshVal").textContent=state.threshold+"%以上";});
+
+  $("#sortSelect").addEventListener("change",applySort);
+}
+window.addEventListener("DOMContentLoaded",init);
+})();
+</script>
+</body>
+</html>
