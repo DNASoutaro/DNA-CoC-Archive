@@ -294,6 +294,8 @@ textarea.paste{
 .preview-box b{color:var(--brass)}
 
 .hidden{display:none!important}
+.ccfolia-check{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink);cursor:pointer;margin-bottom:4px}
+.ccfolia-check input{width:18px;height:18px;accent-color:var(--verdigris);cursor:pointer}
 
 /* ネタバレ注意マーク */
 .spoiler-badge{color:#e0a93f;margin-right:5px;font-size:.95em}
@@ -507,6 +509,36 @@ textarea.paste{
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost sans" id="backupDone">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- チャットパレット/駒 作成モーダル -->
+<div class="modal-scrim" id="paletteModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="sans">チャットパレット</h3>
+      <button class="btn btn-ghost sans" id="paletteClose">×</button>
+    </div>
+    <div class="modal-body">
+      <label class="ccfolia-check sans">
+        <input type="checkbox" id="makePiece" checked>
+        <span>ココフォリアの駒も作成する</span>
+      </label>
+      <p class="sans" style="font-size:11px;color:var(--ink-faint);margin:6px 0 12px">
+        算式は CCB&lt;= ／ 回避・目星・聞き耳・図書館・母国語は初期値でも記載 ／ その他は成長済みのみ ／ 能力値×5を含む
+      </p>
+      <div class="toolbar" style="margin-bottom:10px">
+        <button class="btn btn-primary sans" id="copyPalette">📋 チャットパレットをコピー</button>
+        <button class="btn sans" id="copyPiece">🎴 ココフォリア駒をコピー</button>
+      </div>
+      <textarea class="paste" id="paletteArea" readonly style="min-height:240px"></textarea>
+      <div class="section-label sans" style="margin-top:16px">キャラプロフィール</div>
+      <textarea class="paste" id="profileArea" readonly style="min-height:70px"></textarea>
+      <button class="btn sans" id="copyProfile" style="margin-top:8px">📋 プロフィールをコピー</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost sans" id="paletteDone">閉じる</button>
     </div>
   </div>
 </div>
@@ -867,6 +899,7 @@ function openDetail(id){
     </div>
 
     <div class="toolbar" style="margin-top:18px">
+      <button class="btn btn-primary sans" id="paletteBtn">⚄ チャットパレット作成</button>
       <button class="btn sans" id="addImgBtn">⌖ 画像を追加</button>
       ${c.imageId?'<button class="btn btn-ghost sans" id="rmImgBtn">画像を削除</button>':''}
       <button class="btn btn-ghost sans" id="delCharBtn" style="margin-left:auto;color:var(--blood)">この探索者を削除</button>
@@ -909,6 +942,7 @@ function bindDetailEvents(c){
   $("#imgInput").addEventListener("change",onImagePick);
   const rm=$("#rmImgBtn");if(rm)rm.addEventListener("click",removeImage);
   $("#delCharBtn").addEventListener("click",deleteCurrent);
+  $("#paletteBtn").addEventListener("click",()=>openPalette(c));
 
   // ネタバレトグル
   $("#spoilerToggle").addEventListener("click",async()=>{
@@ -1023,6 +1057,203 @@ function extractMemo(raw){
   const m=raw.match(/メモ：([\s\S]*?)(?:\n■|■簡易用■|$)/);
   if(m)return m[1].trim();
   return "";
+}
+
+// ---- チャットパレット / ココフォリア駒 生成 ----
+const ALWAYS_SKILLS=["回避","目星","聞き耳","図書館","母国語"];
+
+// rawTextから武器(名称・ダメージ)を抽出
+function parseWeapons(raw){
+  if(!raw)return [];
+  const m=raw.match(/■戦闘■([\s\S]*?)(?:■所持品■|■その他■|■簡易用■|$)/);
+  if(!m)return [];
+  const weapons=[];
+  m[1].split(/\r?\n/).forEach(line=>{
+    // 全角/半角スペースで分割。先頭=名称、2つ目=成功率、3つ目=ダメージ
+    const cols=line.split(/[\s　]+/).filter(x=>x);
+    if(cols.length>=3 && cols[0] && !cols[0].includes("名称") && !cols[0].includes("ダメージボーナス")){
+      const name=cols[0];
+      const dmg=cols[2];
+      // ダメージがダイス表記(数字d数字 や 数字+数字)なら採用
+      if(/\d*[dD]\d+|^\d+$/.test(dmg)){
+        weapons.push({name,dmg});
+      }
+    }
+  });
+  return weapons;
+}
+
+function buildChatPalette(c){
+  const S=c.stats;
+  const out=[];
+  out.push("CCB<=");                       // 先頭の空ロール
+  out.push("CCB<={SAN} SANチェック");
+  if(S["アイデア"]!=null)out.push(`CCB<=${S["アイデア"]} アイデア`);
+  if(S["幸運"]!=null)out.push(`CCB<=${S["幸運"]} 幸運`);
+  if(S["知識"]!=null)out.push(`CCB<=${S["知識"]} 知識`);
+
+  const weapons=parseWeapons(c.rawText);
+  const weaponByName={};
+  weapons.forEach(w=>{ weaponByName[w.name]=w.dmg; });
+
+  // 技能ロール(振り分け済み or 必ず載せる初期値技能)
+  c.skills.forEach(sk=>{
+    if(sk.isAllocated || ALWAYS_SKILLS.includes(sk.name)){
+      const disp=sk.name+(sk.subname?`（${sk.subname}）`:"");
+      const val=Math.min(sk.value,99); // 技能値は99%上限
+      out.push(`CCB<=${val} ${disp}`);
+      // 武器名が技能名と一致するならダメージロールを直後に
+      if(weaponByName[sk.name]){
+        out.push(`${weaponByName[sk.name]} ${sk.name}`);
+      }
+      // 精神分析の直後にSAN回復
+      if(sk.name==="精神分析"){
+        out.push("1D3 SAN回復");
+      }
+    }
+  });
+
+  // 能力値×5(倍数ロール) 変数表記
+  ["STR","CON","POW","DEX","APP","SIZ","INT","EDU"].forEach(k=>{
+    if(S[k]!=null)out.push(`CCB<=({${k}}*5) ${k}倍数`);
+  });
+  // 末尾に能力値コメント
+  ["STR","CON","POW","DEX","APP","SIZ","INT","EDU"].forEach(k=>{
+    if(S[k]!=null)out.push(`//${k}=${S[k]}`);
+  });
+  return out.join("\n");
+}
+
+// 駒のmemo(詳細欄)を正しい形式で生成
+function buildPieceMemo(c){
+  const S=c.stats;
+  const lines=[];
+  // 1行目: 名前（年齢）　職業　性別
+  lines.push(`${c.name||c.title||""}（${c.age||""}）　${c.job||""}　${c.sex||""}`);
+  // 能力値ブロック(3列ずつ、正しい並び)
+  const v=k=>S[k]!=null?S[k]:"";
+  lines.push(`STR:${v("STR")}  DEX:${v("DEX")}  POW:${v("POW")}`);
+  lines.push(`CON:${v("CON")}  APP:${v("APP")}  EDU:${v("EDU")}`);
+  lines.push(`SIZ:${v("SIZ")}  INT:${v("INT")}  SAN:${S.SAN_current!=null?S.SAN_current:""}`);
+  lines.push(`HP:${v("HP")}   MP:${v("MP")}   DB:${S.DB||""}`);
+  lines.push("-------------------------------------");
+  lines.push("【技能】");
+  // 技能: 載せる技能を3列ずつ、各「名前（値%）」
+  const skillStrs=[];
+  if(S["アイデア"]!=null)skillStrs.push(`アイデア（${S["アイデア"]}%）`);
+  if(S["幸運"]!=null)skillStrs.push(`幸運（${S["幸運"]}%）`);
+  if(S["知識"]!=null)skillStrs.push(`知識（${S["知識"]}%）`);
+  c.skills.forEach(sk=>{
+    if(sk.isAllocated || ALWAYS_SKILLS.includes(sk.name)){
+      const disp=sk.name+(sk.subname?`（${sk.subname}）`:"");
+      const val=Math.min(sk.value,99);
+      skillStrs.push(`${disp}（${val}%）`);
+    }
+  });
+  // 見本準拠: 列内はスペース区切り、3列目で改行(末尾スペースなし)、最終技能の後だけスペース
+  let buf="";
+  skillStrs.forEach((s,idx)=>{
+    const isLast=(idx===skillStrs.length-1);
+    const isColEnd=((idx+1)%3===0);
+    buf+=s;
+    if(isColEnd){
+      // 3列目: 最後の技能ならスペース付与、そうでなければ改行
+      if(isLast)buf+="　";
+      lines.push(buf); buf="";
+    }else{
+      buf+="　";  // 列間スペース
+      if(isLast){ lines.push(buf); buf=""; }
+    }
+  });
+  if(buf)lines.push(buf);
+  lines.push("-------------------------------------");
+  lines.push("【持ち物】");
+  return lines.join("\n");
+}
+
+// ココフォリア駒データ(clipboard用JSON) ※公式仕様準拠
+function buildCcfoliaPiece(c){
+  const S=c.stats;
+  const palette=buildChatPalette(c);
+  const pv=k=>String(S[k]!=null?S[k]:"");
+  return JSON.stringify({
+    kind:"character",
+    data:{
+      name:c.name||c.title||"探索者",
+      memo:buildProfile(c),
+      externalUrl:c.source||"",
+      commands:palette,
+      initiative:S.DEX!=null?S.DEX:0,
+      status:[
+        {label:"HP",value:S.HP!=null?S.HP:0,max:S.HP!=null?S.HP:0},
+        {label:"MP",value:S.MP!=null?S.MP:0,max:S.MP!=null?S.MP:0},
+        {label:"SAN",value:S.SAN_current!=null?S.SAN_current:0,max:S.SAN_current!=null?S.SAN_current:0},
+      ],
+      params:[
+        {label:"STR",value:pv("STR")},
+        {label:"DEX",value:pv("DEX")},
+        {label:"POW",value:pv("POW")},
+        {label:"CON",value:pv("CON")},
+        {label:"APP",value:pv("APP")},
+        {label:"EDU",value:pv("EDU")},
+        {label:"SIZ",value:pv("SIZ")},
+        {label:"INT",value:pv("INT")},
+        {label:"DB",value:String(S.DB||"")},
+      ],
+    }
+  });
+}
+
+// キャラプロフィール文字列(プロフィール欄表示用)
+function buildProfile(c){
+  let height="";
+  if(c.rawText){const m=c.rawText.match(/身長：(.*)/);if(m)height=m[1].trim();}
+  if(height && /^\d+(\.\d+)?$/.test(height))height+="cm"; // 数字のみならcm補完
+  const line2=[c.age?c.age+"歳":"", c.job||"", c.sex||"", height].filter(Boolean).join("／");
+  return [c.name||c.title||"", line2].filter(Boolean).join("\n");
+}
+
+let _paletteText="", _pieceText="", _profileText="";
+function openPalette(c){
+  _paletteText=buildChatPalette(c);
+  _pieceText=buildCcfoliaPiece(c);
+  _profileText=buildProfile(c);
+  $("#paletteArea").value=_paletteText;
+  $("#profileArea").value=_profileText;
+  $("#paletteModal").classList.add("open");
+}
+async function copyText(text,msg){
+  // 1) まずClipboard APIを試す
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try{
+      await navigator.clipboard.writeText(text);
+      toast(msg||"コピーしました");
+      return;
+    }catch(e){/* フォールバックへ */}
+  }
+  // 2) 専用の隠しテキストエリアでexecCommand
+  try{
+    const tmp=document.createElement("textarea");
+    tmp.value=text;
+    tmp.setAttribute("readonly","");
+    tmp.style.position="fixed";
+    tmp.style.top="0";tmp.style.left="0";
+    tmp.style.width="1px";tmp.style.height="1px";
+    tmp.style.opacity="0";
+    document.body.appendChild(tmp);
+    tmp.focus();
+    tmp.select();
+    tmp.setSelectionRange(0,text.length); // iOS対策
+    const ok=document.execCommand("copy");
+    document.body.removeChild(tmp);
+    if(ok){ toast(msg||"コピーしました"); return; }
+  }catch(e){/* 最終手段へ */}
+  // 3) どうしても無理なら、コピー用モーダルに表示して手動コピーを促す
+  $("#paletteArea").value=text;
+  $("#paletteArea").removeAttribute("readonly");
+  $("#paletteArea").focus();
+  $("#paletteArea").select();
+  toast("自動コピー不可。枠内を長押し→すべてを選択→コピー");
 }
 
 // ---- 画像 ----
@@ -1302,6 +1533,19 @@ async function init(){
   $("#importCancel").addEventListener("click",()=>$("#importModalWrap").classList.remove("open"));
   $("#importModalWrap").addEventListener("click",e=>{if(e.target.id==="importModalWrap")$("#importModalWrap").classList.remove("open");});
   $("#exportBtn").addEventListener("click",exportJSON);
+  // チャットパレット
+  $("#copyPalette").addEventListener("click",()=>copyText(_paletteText,"チャットパレットをコピーしました"));
+  $("#copyPiece").addEventListener("click",()=>{
+    if(!$("#makePiece").checked){toast("「駒も作成する」をオンにしてください");return;}
+    copyText(_pieceText,"ココフォリア駒をコピー。部屋で貼り付けを");
+  });
+  $("#copyProfile").addEventListener("click",()=>copyText(_profileText,"プロフィールをコピーしました"));
+  $("#paletteClose").addEventListener("click",()=>$("#paletteModal").classList.remove("open"));
+  $("#paletteDone").addEventListener("click",()=>$("#paletteModal").classList.remove("open"));
+  $("#paletteModal").addEventListener("click",e=>{if(e.target.id==="paletteModal")$("#paletteModal").classList.remove("open");});
+  $("#makePiece").addEventListener("change",e=>{
+    $("#copyPiece").style.opacity=e.target.checked?"1":".4";
+  });
   $("#backupCopy").addEventListener("click",copyBackup);
   $("#backupDownload").addEventListener("click",downloadBackup);
   $("#backupClose").addEventListener("click",()=>$("#backupModal").classList.remove("open"));
