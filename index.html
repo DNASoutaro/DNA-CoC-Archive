@@ -269,6 +269,18 @@ body.show-initial .skill-row.hidden-initial{display:flex}
 .kana-edit-row input{flex:1;background:var(--abyss);color:var(--ink);border:1px solid var(--line);
   border-radius:var(--radius);padding:9px 12px;font-size:14px;font-family:"Hiragino Sans",sans-serif}
 
+/* 発言色 */
+.color-edit-row{display:flex;align-items:center;gap:10px;margin:4px 0;font-size:13px;color:var(--ink)}
+.color-edit-row label{color:var(--ink-faint);flex-shrink:0}
+.color-swatch{width:26px;height:26px;border-radius:var(--radius);border:1px solid var(--line);
+  flex-shrink:0;background-image:linear-gradient(45deg,#333 25%,transparent 25%,transparent 75%,#333 75%),
+  linear-gradient(45deg,#333 25%,transparent 25%,transparent 75%,#333 75%);
+  background-size:10px 10px;background-position:0 0,5px 5px}
+.color-edit-row input{flex:1;background:var(--abyss);color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);padding:9px 12px;font-size:14px;font-family:"Hiragino Sans",monospace;text-transform:uppercase}
+.color-chip{display:inline-flex;align-items:center;gap:5px;font-family:"Hiragino Sans",monospace;text-transform:uppercase}
+.color-dot{width:11px;height:11px;border-radius:2px;border:1px solid var(--line);display:inline-block;flex-shrink:0}
+
 /* タグ */
 .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .tag{font-family:"Hiragino Sans",sans-serif;font-size:11px;color:var(--brass);
@@ -718,7 +730,7 @@ function parseCharacter(text,charaId,extra){
     source:charaId?("https://charasheet.vampire-blood.net/"+charaId):null,
     title:h.title,name:h.name,job:h.job,age:h.age,sex:h.sex,origin:h.origin,
     tags:[],imageId:null,stats,skills,rawText:text,
-    userTags:[],hasSpoiler:false,secretMemos:[],spells:"",creatures:"",kana:"",kana:"",
+    userTags:[],hasSpoiler:false,secretMemos:[],spells:"",creatures:"",kana:"",color:"",
     createdAt:Date.now(),updatedAt:Date.now(),
   };
   if(extra)Object.assign(c,extra);
@@ -736,7 +748,7 @@ let state={
 
 // ---- ロード ----
 // 手編集フィールド(保管所更新でも保持する項目)
-const USER_FIELDS=["userTags","hasSpoiler","secretMemos","spells","creatures","kana","imageId"];
+const USER_FIELDS=["userTags","hasSpoiler","secretMemos","spells","creatures","kana","imageId","color"];
 
 // 自動取得JSONを既存データにマージ(charaIdをキーに)
 async function mergeFromAuto(autoData){
@@ -768,6 +780,11 @@ async function mergeFromAuto(autoData){
   return {added,updated};
 }
 
+// カラーコードの簡易検証(#RGB / #RRGGBB)
+function isValidColor(s){
+  return typeof s==="string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s.trim());
+}
+
 function ensureFields(c){
   if(!Array.isArray(c.userTags))c.userTags=[];
   if(typeof c.hasSpoiler!=="boolean")c.hasSpoiler=false;
@@ -775,6 +792,7 @@ function ensureFields(c){
   if(typeof c.spells!=="string")c.spells="";
   if(typeof c.creatures!=="string")c.creatures="";
   if(typeof c.kana!=="string")c.kana="";
+  if(typeof c.color!=="string")c.color="";
 }
 
 async function loadAll(){
@@ -810,6 +828,7 @@ async function loadAll(){
     if(typeof c.spells!=="string"){c.spells="";changed=true;}
     if(typeof c.creatures!=="string"){c.creatures="";changed=true;}
     if(typeof c.kana!=="string"){c.kana="";changed=true;}
+    if(typeof c.color!=="string"){c.color="";changed=true;}
     if(changed)await dbPut("characters",c);
   }
 }
@@ -935,6 +954,7 @@ function renderList(){
           ${keyChip}
           <span class="stat-chip">SAN <b>${c.stats.SAN_current??"—"}</b></span>
           <span class="stat-chip">習得技能 <b>${allocCount}</b></span>
+          ${c.color?`<span class="stat-chip color-chip"><span class="color-dot" style="background:${isValidColor(c.color)?esc(c.color):"transparent"}"></span>${esc(c.color)}</span>`:""}
         </div>
       </div>
       <button class="card-del" data-del="${c.id}" aria-label="削除" title="削除">✕</button>
@@ -1027,6 +1047,12 @@ function openDetail(id){
       <input type="text" id="kanaInput" placeholder="なまえのよみがな" value="${esc(c.kana||"")}" maxlength="40">
     </div>
 
+    <div class="color-edit-row sans">
+      <label>発言色</label>
+      <span class="color-swatch" id="colorSwatch" style="background:${isValidColor(c.color)?esc(c.color):"transparent"}"></span>
+      <input type="text" id="colorInput" placeholder="#RRGGBB" value="${esc(c.color||"")}" maxlength="7">
+    </div>
+
     <div class="spoiler-toggle-row sans">
       <div class="toggle ${c.hasSpoiler?'on':''}" id="spoilerToggle"></div>
       <span>⚠ ネタバレ注意マークをつける</span>
@@ -1093,6 +1119,18 @@ function bindDetailEvents(c){
       await saveCharacter(c);
       const nameEl=$("#detailWrap .detail-name");
       if(nameEl)nameEl.innerHTML=esc(c.name||"")+(c.kana?`<span class="detail-kana">${esc(c.kana)}</span>`:"");
+    },500);
+  });
+
+  // 発言色カラーコード(入力即座に四角へ反映、止まったら保存)
+  let colt;
+  $("#colorInput").addEventListener("input",e=>{
+    const v=e.target.value.trim();
+    const sw=$("#colorSwatch");
+    if(sw)sw.style.background=isValidColor(v)?v:"transparent";
+    clearTimeout(colt);colt=setTimeout(async()=>{
+      c.color=v;
+      await saveCharacter(c);
     },500);
   });
 
@@ -1328,32 +1366,43 @@ function buildCcfoliaPiece(c){
   const S=c.stats;
   const palette=buildChatPalette(c);
   const pv=k=>String(S[k]!=null?S[k]:"");
-  return JSON.stringify({
-    kind:"character",
-    data:{
-      name:c.name||c.title||"探索者",
-      memo:buildProfile(c),
-      externalUrl:c.source||"",
-      commands:palette,
-      initiative:S.DEX!=null?S.DEX:0,
-      status:[
-        {label:"HP",value:S.HP!=null?S.HP:0,max:S.HP!=null?S.HP:0},
-        {label:"MP",value:S.MP!=null?S.MP:0,max:S.MP!=null?S.MP:0},
-        {label:"SAN",value:S.SAN_current!=null?S.SAN_current:0,max:S.SAN_current!=null?S.SAN_current:0},
-      ],
-      params:[
-        {label:"STR",value:pv("STR")},
-        {label:"DEX",value:pv("DEX")},
-        {label:"POW",value:pv("POW")},
-        {label:"CON",value:pv("CON")},
-        {label:"APP",value:pv("APP")},
-        {label:"EDU",value:pv("EDU")},
-        {label:"SIZ",value:pv("SIZ")},
-        {label:"INT",value:pv("INT")},
-        {label:"DB",value:String(S.DB||"")},
-      ],
-    }
-  });
+  const data={
+    name:c.name||c.title||"探索者",
+    memo:buildProfile(c),
+    externalUrl:c.source||"",
+    commands:palette,
+    initiative:S.DEX!=null?S.DEX:0,
+    status:[
+      {label:"HP",value:S.HP!=null?S.HP:0,max:S.HP!=null?S.HP:0},
+      {label:"MP",value:S.MP!=null?S.MP:0,max:S.MP!=null?S.MP:0},
+      {label:"SAN",value:S.SAN_current!=null?S.SAN_current:0,max:S.SAN_current!=null?S.SAN_current:0},
+    ],
+    params:[
+      {label:"STR",value:pv("STR")},
+      {label:"DEX",value:pv("DEX")},
+      {label:"POW",value:pv("POW")},
+      {label:"CON",value:pv("CON")},
+      {label:"APP",value:pv("APP")},
+      {label:"EDU",value:pv("EDU")},
+      {label:"SIZ",value:pv("SIZ")},
+      {label:"INT",value:pv("INT")},
+      {label:"DB",value:String(S.DB||"")},
+    ],
+  };
+  // 発言色が有効に設定されていれば反映(未設定ならcolorを送らず=ココフォリアのデフォルト色)
+  if(isValidColor(c.color)){
+    data.color=normalizeColor(c.color);
+  }
+  return JSON.stringify({kind:"character",data});
+}
+
+// #RGB を #RRGGBB に正規化(大文字)
+function normalizeColor(s){
+  let v=s.trim();
+  if(/^#[0-9a-fA-F]{3}$/.test(v)){
+    v="#"+v.slice(1).split("").map(ch=>ch+ch).join("");
+  }
+  return v.toUpperCase();
 }
 
 // キャラプロフィール文字列(プロフィール欄表示用)
@@ -1591,7 +1640,7 @@ async function importJSONText(text){
     if(typeof c.spells!=="string")c.spells="";
     if(typeof c.creatures!=="string")c.creatures="";
     if(typeof c.kana!=="string")c.kana="";
-    if(typeof c.kana!=="string")c.kana="";
+    if(typeof c.color!=="string")c.color="";
     await dbPut("characters",c);n++;
   }
   if(data.images){
