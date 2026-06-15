@@ -735,10 +735,63 @@ let state={
 };
 
 // ---- ロード ----
+// 手編集フィールド(保管所更新でも保持する項目)
+const USER_FIELDS=["userTags","hasSpoiler","secretMemos","spells","creatures","kana","imageId"];
+
+// 自動取得JSONを既存データにマージ(charaIdをキーに)
+async function mergeFromAuto(autoData){
+  if(!autoData||!Array.isArray(autoData.characters))return 0;
+  // 既存をcharaIdで索引
+  const byCharaId={};
+  characters.forEach(c=>{ if(c.charaId)byCharaId[c.charaId]=c; });
+  let added=0, updated=0;
+  for(const raw of autoData.characters){
+    // 自動JSONは抽出スクリプト形式(rawTextあり) → パースして正規化
+    const fresh = (raw.skills&&raw.stats) ? raw : parseCharacter(raw.rawText||"", raw.charaId, {tags:raw.tags||[]});
+    const existing = raw.charaId ? byCharaId[raw.charaId] : null;
+    if(existing){
+      // 保管所由来データを更新、手編集フィールドは既存を保持
+      const merged={...fresh, id:existing.id};
+      USER_FIELDS.forEach(f=>{ merged[f]=existing[f]; });
+      // 新フィールド未定義の保証
+      ensureFields(merged);
+      await dbPut("characters",merged);
+      updated++;
+    }else{
+      ensureFields(fresh);
+      if(!fresh.id)fresh.id="c_"+(fresh.charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7));
+      await dbPut("characters",fresh);
+      added++;
+    }
+  }
+  characters=await dbAll("characters");
+  return {added,updated};
+}
+
+function ensureFields(c){
+  if(!Array.isArray(c.userTags))c.userTags=[];
+  if(typeof c.hasSpoiler!=="boolean")c.hasSpoiler=false;
+  if(!Array.isArray(c.secretMemos))c.secretMemos=[];
+  if(typeof c.spells!=="string")c.spells="";
+  if(typeof c.creatures!=="string")c.creatures="";
+  if(typeof c.kana!=="string")c.kana="";
+}
+
 async function loadAll(){
   characters=await dbAll("characters");
-  if(characters.length===0 && SEED){
-    // 初回シード(同梱サンプル)
+  // 起動時、同リポジトリのcharacters.jsonを自動読込してマージ
+  let autoLoaded=false;
+  try{
+    const res=await fetch("characters.json?_="+Date.now(),{cache:"no-store"});
+    if(res.ok){
+      const autoData=await res.json();
+      const r=await mergeFromAuto(autoData);
+      autoLoaded=true;
+      if(r&&(r.added||r.updated))setTimeout(()=>toast(`自動更新: 新規${r.added} / 更新${r.updated}`),800);
+    }
+  }catch(e){/* characters.jsonが無い/取得失敗時は従来通り */}
+  // 自動読込も既存も無ければSEED投入
+  if(characters.length===0 && !autoLoaded && SEED){
     for(const c of SEED.characters){
       const ch=parseCharacter(c.rawText,c.charaId,{tags:c.tags||[]});
       await dbPut("characters",ch);
