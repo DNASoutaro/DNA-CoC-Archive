@@ -253,10 +253,21 @@ body.detail-mode .detail-wrap{display:block}
 body.show-initial .skill-row.hidden-initial{display:flex}
 
 .back-btn{
-  font-family:"Hiragino Sans",sans-serif;font-size:13px;background:none;border:none;
-  color:var(--ink-dim);cursor:pointer;padding:8px 0;margin-bottom:8px;display:inline-flex;gap:6px;
+  font-family:"Hiragino Sans",sans-serif;font-size:13px;border:none;
+  color:var(--ink-dim);cursor:pointer;padding:10px 14px;margin:0 -16px 8px;display:flex;gap:6px;
+  position:sticky;top:74px;z-index:35;width:calc(100% + 32px);
+  background:rgba(11,17,24,.97);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);align-items:center;
 }
 .back-btn:hover{color:var(--brass)}
+
+/* 読み仮名 */
+.card-kana{display:block;font-size:11px;color:var(--ink-faint);margin-top:1px}
+.detail-kana{display:block;font-size:12px;color:var(--ink-faint);margin-top:2px;font-family:"Hiragino Sans",sans-serif}
+.kana-edit-row{display:flex;align-items:center;gap:10px;margin:14px 0 4px;font-size:13px;color:var(--ink)}
+.kana-edit-row label{color:var(--ink-faint);flex-shrink:0}
+.kana-edit-row input{flex:1;background:var(--abyss);color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);padding:9px 12px;font-size:14px;font-family:"Hiragino Sans",sans-serif}
 
 /* タグ */
 .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -294,6 +305,23 @@ textarea.paste{
 .preview-box b{color:var(--brass)}
 
 .hidden{display:none!important}
+
+/* 名前検索ボックス */
+.search-row{position:relative;margin-bottom:12px}
+.search-input{
+  width:100%;background:var(--abyss-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:11px 38px 11px 14px;font-size:14px;
+  font-family:"Hiragino Sans",sans-serif;
+}
+.search-input:focus{outline:none;border-color:var(--brass-dim)}
+.search-input::placeholder{color:var(--ink-faint);font-size:13px}
+.search-clear{
+  display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:50%;border:none;background:transparent;
+  color:var(--ink-faint);font-size:18px;cursor:pointer;align-items:center;justify-content:center;
+}
+.search-clear:hover{color:var(--brass);background:var(--abyss-3)}
 .ccfolia-check{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--ink);cursor:pointer;margin-bottom:4px}
 .ccfolia-check input{width:18px;height:18px;accent-color:var(--verdigris);cursor:pointer}
 
@@ -373,13 +401,18 @@ textarea.paste{
       <button class="btn sans" id="importBtn">JSON取り込み</button>
       <button class="btn btn-ghost sans" id="exportBtn">バックアップ</button>
     </div>
+    <div class="search-row">
+      <input type="search" id="searchInput" class="search-input sans" placeholder="🔍 名前・読み仮名で検索（ひらがな/カタカナ問わず）" autocomplete="off">
+      <button class="search-clear sans" id="searchClear" aria-label="クリア">×</button>
+    </div>
     <div class="controls">
       <span class="label">並び替え</span>
       <select id="sortSelect">
         <optgroup label="基本">
           <option value="updatedAt:desc">更新が新しい順</option>
           <option value="updatedAt:asc">更新が古い順</option>
-          <option value="name:asc">名前順 (あ→ん)</option>
+          <option value="name:asc">名前順 (あ→ん・読み仮名基準)</option>
+          <option value="name:desc">名前順 (ん→あ・読み仮名基準)</option>
         </optgroup>
         <optgroup label="能力値が高い順">
           <option value="STR:desc">STR 高い順</option>
@@ -685,7 +718,7 @@ function parseCharacter(text,charaId,extra){
     source:charaId?("https://charasheet.vampire-blood.net/"+charaId):null,
     title:h.title,name:h.name,job:h.job,age:h.age,sex:h.sex,origin:h.origin,
     tags:[],imageId:null,stats,skills,rawText:text,
-    userTags:[],hasSpoiler:false,secretMemos:[],spells:"",creatures:"",
+    userTags:[],hasSpoiler:false,secretMemos:[],spells:"",creatures:"",kana:"",kana:"",
     createdAt:Date.now(),updatedAt:Date.now(),
   };
   if(extra)Object.assign(c,extra);
@@ -698,7 +731,7 @@ let imageCache={}; // id -> objectURL
 let state={
   sortKey:"updatedAt", sortDir:"desc",
   filterSkills:new Set(), filterMode:"AND", threshold:0,
-  hideInitial:true,
+  hideInitial:true, search:"",
 };
 
 // ---- ロード ----
@@ -723,6 +756,7 @@ async function loadAll(){
     if(!Array.isArray(c.secretMemos)){c.secretMemos=[];changed=true;}
     if(typeof c.spells!=="string"){c.spells="";changed=true;}
     if(typeof c.creatures!=="string"){c.creatures="";changed=true;}
+    if(typeof c.kana!=="string"){c.kana="";changed=true;}
     if(changed)await dbPut("characters",c);
   }
 }
@@ -731,6 +765,38 @@ async function loadAll(){
 async function saveCharacter(c){
   c.updatedAt=Date.now();
   await dbPut("characters",c);
+}
+
+// age/sexの表記ゆれを補正して返す {age, sex}
+function normProfile(c){
+  let age=(c.age||"").trim();
+  let sex=(c.sex||"").trim();
+  let job=(c.job||"").trim();
+  // ageに「/ 性別：〇」が混入しているケースを救出
+  const m=age.match(/性別：?\s*(.*)$/);
+  if(m){
+    if(!sex)sex=m[1].trim();
+    age=age.replace(/[\/／]?\s*性別：?.*$/,"").trim();
+  }
+  // sex側に残った「性別：」や前後のスラッシュ・歳を除去
+  sex=sex.replace(/^[\/／\s]*/,"").replace(/^性別：?\s*/,"").replace(/歳\s*$/,"").trim();
+  // 末尾や前後の余分なスラッシュ・空白を除去
+  age=age.replace(/[\/／\s]+$/,"").replace(/^[\/／\s]+/,"").replace(/歳\s*$/,"").trim();
+  job=job.replace(/[\/／\s]+$/,"").replace(/^[\/／\s]+/,"").trim();
+  // 年齢は数字を優先抽出。なければ空(「不明」等は表示しない方針なら空)
+  const ageNum=age.match(/\d+/);
+  const ageDisp=ageNum?ageNum[0]:(age && age!=="不明"?age:"");
+  return {age:ageDisp, sex, job};
+}
+
+// プロフィール行を組み立て(職業 ／ 年齢 ／ 性別)。全角スラッシュ統一・空欄スキップ
+function profileLine(c){
+  const {age,sex,job}=normProfile(c);
+  const parts=[];
+  if(job)parts.push(job);
+  if(age)parts.push(age+"歳");
+  if(sex)parts.push(sex);
+  return parts.join("／");
 }
 
 // ---- 表示: 一覧 ----
@@ -743,7 +809,24 @@ function statVal(c,key){
   const sk=c.skills.find(s=>s.name===key);
   return sk?sk.value:null;
 }
+// カタカナ→ひらがな統一(検索・ソート用)。全角カナを小文字化的に揃える
+function toHira(s){
+  return (s||"").replace(/[\u30a1-\u30f6]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60))
+    .replace(/\s+/g,"").toLowerCase();
+}
+// ソート用の読み仮名キー(読み仮名があればそれ、なければ名前)
+function nameSortKey(c){
+  const base=(c.kana&&c.kana.trim())?c.kana:(c.name||c.title||"");
+  return toHira(base);
+}
+
 function passFilter(c){
+  // 名前検索(ひらがなカタカナ区別なし、名前・読み仮名どちらでも)
+  if(state.search){
+    const q=toHira(state.search);
+    const hay=toHira(c.name)+toHira(c.title)+toHira(c.kana);
+    if(!hay.includes(q))return false;
+  }
   if(state.filterSkills.size===0)return true;
   const owned=new Set(c.skills.filter(s=>s.isAllocated && s.value>=state.threshold).map(s=>s.name));
   const arr=Array.from(state.filterSkills);
@@ -754,7 +837,7 @@ function sortChars(list){
   const k=state.sortKey, dir=state.sortDir==="asc"?1:-1;
   return list.slice().sort((a,b)=>{
     if(k==="updatedAt")return (a.updatedAt-b.updatedAt)*dir;
-    if(k==="name")return a.name.localeCompare(b.name,"ja")*dir;
+    if(k==="name")return nameSortKey(a).localeCompare(nameSortKey(b),"ja")*dir;
     let va=statVal(a,k), vb=statVal(b,k);
     // 技能を持たない(null)は常に末尾
     if(va===null&&vb===null)return 0;
@@ -792,8 +875,8 @@ function renderList(){
       ${thumb}
       <div class="card-body">
         <div class="card-title">${spoiler}${esc(c.title||c.name||"無題")}</div>
-        <div class="card-name">${esc(c.name||"")}</div>
-        <div class="card-meta">${esc(c.job||"")}${c.age?" ／ "+esc(c.age)+"歳":""}</div>
+        <div class="card-name">${esc(c.name||"")}${c.kana?`<span class="card-kana">${esc(c.kana)}</span>`:""}</div>
+        <div class="card-meta">${esc(profileLine(c))}</div>
         ${utags}
         <div class="card-stats">
           ${keyChip}
@@ -876,14 +959,19 @@ function openDetail(id){
       ${portrait}
       <div style="flex:1;min-width:0">
         <div class="detail-title">${c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':''}${esc(c.title||c.name||"無題")}</div>
-        <div class="detail-name">${esc(c.name||"")}</div>
+        <div class="detail-name">${esc(c.name||"")}${c.kana?`<span class="detail-kana">${esc(c.kana)}</span>`:""}</div>
         <div class="detail-sub sans">
-          ${esc(c.job||"")}${c.age?" ／ "+esc(c.age)+"歳":""}${c.sex?" ／ "+esc(c.sex):""}<br>
+          ${esc(profileLine(c))}<br>
           ${c.origin?"出身："+esc(c.origin)+"　":""}
           ${c.source?`<a href="${c.source}" target="_blank" rel="noopener">保管所で開く ↗</a>`:""}
         </div>
         ${tags?`<div class="tag-row">${tags}</div>`:""}
       </div>
+    </div>
+
+    <div class="kana-edit-row sans">
+      <label>読み仮名</label>
+      <input type="text" id="kanaInput" placeholder="なまえのよみがな" value="${esc(c.kana||"")}" maxlength="40">
     </div>
 
     <div class="spoiler-toggle-row sans">
@@ -943,6 +1031,17 @@ function bindDetailEvents(c){
   const rm=$("#rmImgBtn");if(rm)rm.addEventListener("click",removeImage);
   $("#delCharBtn").addEventListener("click",deleteCurrent);
   $("#paletteBtn").addEventListener("click",()=>openPalette(c));
+
+  // 読み仮名(入力が止まったら保存し、即座にタイトル下も更新)
+  let kt;
+  $("#kanaInput").addEventListener("input",e=>{
+    clearTimeout(kt);kt=setTimeout(async()=>{
+      c.kana=e.target.value.trim();
+      await saveCharacter(c);
+      const nameEl=$("#detailWrap .detail-name");
+      if(nameEl)nameEl.innerHTML=esc(c.name||"")+(c.kana?`<span class="detail-kana">${esc(c.kana)}</span>`:"");
+    },500);
+  });
 
   // ネタバレトグル
   $("#spoilerToggle").addEventListener("click",async()=>{
@@ -1438,6 +1537,8 @@ async function importJSONText(text){
     if(!Array.isArray(c.secretMemos))c.secretMemos=[];
     if(typeof c.spells!=="string")c.spells="";
     if(typeof c.creatures!=="string")c.creatures="";
+    if(typeof c.kana!=="string")c.kana="";
+    if(typeof c.kana!=="string")c.kana="";
     await dbPut("characters",c);n++;
   }
   if(data.images){
@@ -1567,6 +1668,17 @@ async function init(){
   $("#threshRange").addEventListener("input",e=>{state.threshold=parseInt(e.target.value,10);$("#threshVal").textContent=state.threshold+"%以上";});
 
   $("#sortSelect").addEventListener("change",applySort);
+  // 名前検索
+  $("#searchInput").addEventListener("input",e=>{
+    state.search=e.target.value;
+    $("#searchClear").style.display=state.search?"flex":"none";
+    renderList();
+  });
+  $("#searchClear").addEventListener("click",()=>{
+    state.search="";$("#searchInput").value="";
+    $("#searchClear").style.display="none";
+    renderList();
+  });
 }
 window.addEventListener("DOMContentLoaded",init);
 })();
