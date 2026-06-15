@@ -31,11 +31,13 @@ jobs:
           python-version: '3.12'
 
       - name: 依存をインストール
-        run: pip install requests
-
-      - name: 抽出スクリプトを実行
         run: |
-          python fetch_charasheet_ashell.py "${{ github.event.inputs.tag || '遺伝子の探索者' }}"
+          pip install requests playwright
+          python -m playwright install --with-deps chromium
+
+      - name: 抽出スクリプトを実行(差分更新+内訳取得)
+        run: |
+          python fetch_with_breakdown.py "${{ github.event.inputs.tag || '遺伝子の探索者' }}"
 
       - name: 取得件数を検証(安全弁)
         run: |
