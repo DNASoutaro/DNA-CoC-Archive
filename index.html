@@ -106,10 +106,10 @@ main{max-width:760px;margin:0 auto;padding:16px;}
 }
 img.card-thumb{object-fit:cover}
 .card-body{flex:1;min-width:0}
-.card-title{font-size:16px;color:var(--brass);margin-bottom:2px;
+.card-name-main{font-size:17px;color:var(--brass);font-weight:600;margin-bottom:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-name{font-size:13px;color:var(--ink);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-title-sub{font-size:11px;color:var(--ink-faint);margin-top:2px;
+  font-family:"Hiragino Sans",sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-meta{font-family:"Hiragino Sans",sans-serif;font-size:11px;color:var(--ink-faint);
   margin-top:4px;letter-spacing:.04em}
 .card-stats{
@@ -203,8 +203,8 @@ body.detail-mode .detail-wrap{display:block}
   background:var(--abyss);border:1px solid var(--line);object-fit:cover;
   display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-size:32px;
 }
-.detail-title{font-size:24px;color:var(--brass);line-height:1.2;margin-bottom:4px}
-.detail-name{font-size:15px;color:#f4f8fb;font-weight:600}
+.detail-name-main{font-size:24px;color:var(--brass);line-height:1.2;margin-bottom:2px;font-weight:600}
+.detail-title-sub{font-size:13px;color:var(--ink-faint);font-weight:400;margin-top:3px;font-family:"Hiragino Sans",sans-serif}
 .detail-sub{font-family:"Hiragino Sans",sans-serif;font-size:12px;color:var(--ink-faint);margin-top:8px;line-height:1.8}
 .detail-sub a{color:var(--verdigris);text-decoration:none}
 
@@ -255,12 +255,32 @@ body.show-initial .skill-row.hidden-initial{display:flex}
 
 .back-btn{
   font-family:"Hiragino Sans",sans-serif;font-size:13px;border:none;
-  color:var(--ink-dim);cursor:pointer;padding:10px 14px;margin:0 -16px 8px;display:flex;gap:6px;
+  color:var(--ink-dim);padding:8px 14px;margin:0 -16px 8px;display:flex;gap:6px;
   position:sticky;top:74px;z-index:35;width:calc(100% + 32px);
   background:rgba(11,17,24,.97);backdrop-filter:blur(8px);
   border-bottom:1px solid var(--line);align-items:center;
 }
-.back-btn:hover{color:var(--brass)}
+.back-btn-link{background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:13px;
+  font-family:inherit;padding:2px 0}
+.back-btn-link:hover{color:var(--brass)}
+.edit-toggle-btn{margin-left:auto;background:var(--abyss-3);border:1px solid var(--brass-dim);
+  color:var(--brass);cursor:pointer;font-size:13px;font-family:inherit;
+  padding:5px 18px;border-radius:999px}
+.edit-toggle-btn.saving{background:var(--verdigris);border-color:var(--verdigris);color:#04110e;font-weight:700}
+
+/* 編集モード制御: 既定(閲覧)では編集専用UIを隠す */
+.editable-row{display:none !important}
+#detailWrap.edit-mode .editable-row{display:flex !important}
+.edit-only{display:none !important}
+#detailWrap.edit-mode .edit-only{display:inline-flex !important}
+/* 閲覧時はテキストエリア等を編集不可に */
+#detailWrap:not(.edit-mode) .lore-area{pointer-events:none;opacity:.95}
+#detailWrap:not(.edit-mode) .lore-block.empty{display:none}
+#detailWrap:not(.edit-mode) .secret-title{pointer-events:none}
+#detailWrap:not(.edit-mode) .secret-body{pointer-events:none}
+#detailWrap:not(.edit-mode) .secret-del{display:none}
+/* 閲覧時、秘匿メモが空なら案内文ごと隠す */
+#detailWrap:not(.edit-mode) .secret-empty-msg{display:none}
 
 /* 読み仮名 */
 .card-kana{display:block;font-size:11px;color:var(--ink-faint);margin-top:1px}
@@ -340,7 +360,7 @@ textarea.paste{
 
 /* ネタバレ注意マーク */
 .spoiler-badge{color:#e0a93f;margin-right:5px;font-size:.95em}
-.detail-title .spoiler-badge{font-size:.8em;vertical-align:middle}
+.detail-name-main .spoiler-badge{font-size:.8em;vertical-align:middle}
 
 /* カード上のユーザータグ */
 .card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
@@ -766,6 +786,11 @@ async function mergeFromAuto(autoData){
       // 保管所由来データを更新、手編集フィールドは既存を保持
       const merged={...fresh, id:existing.id};
       USER_FIELDS.forEach(f=>{ merged[f]=existing[f]; });
+      // 名前を手編集していれば、その名前とフラグを保持(保管所の名前で上書きしない)
+      if(existing.nameEdited){
+        merged.name=existing.name;
+        merged.nameEdited=true;
+      }
       // 新フィールド未定義の保証
       ensureFields(merged);
       await dbPut("characters",merged);
@@ -794,6 +819,7 @@ function ensureFields(c){
   if(typeof c.creatures!=="string")c.creatures="";
   if(typeof c.kana!=="string")c.kana="";
   if(typeof c.color!=="string")c.color="";
+  if(typeof c.nameEdited!=="boolean")c.nameEdited=false;
 }
 
 async function loadAll(){
@@ -947,8 +973,9 @@ function renderList(){
     return `<div class="card" data-id="${c.id}">
       ${thumb}
       <div class="card-body">
-        <div class="card-title">${spoiler}${esc(c.title||c.name||"無題")}</div>
-        <div class="card-name">${esc(c.name||"")}${c.kana?`<span class="card-kana">${esc(c.kana)}</span>`:""}</div>
+        <div class="card-name-main">${spoiler}${esc(c.name||c.title||"無名")}</div>
+        ${c.kana?`<div class="card-kana">${esc(c.kana)}</div>`:""}
+        ${c.title?`<div class="card-title-sub">${esc(c.title)}</div>`:""}
         <div class="card-meta">${esc(profileLine(c))}</div>
         ${utags}
         <div class="card-stats">
@@ -1051,12 +1078,16 @@ function openDetail(id){
     `<span class="utag">${esc(t)}<button class="utag-x" data-tagidx="${i}">×</button></span>`).join("");
 
   $("#detailWrap").innerHTML=`
-    <button class="back-btn sans" id="backBtn">‹ 一覧へ戻る</button>
+    <div class="back-btn sans" id="backBar">
+      <button class="back-btn-link" id="backBtn">‹ 一覧へ戻る</button>
+      <button class="edit-toggle-btn" id="editToggleBtn">✎ 編集</button>
+    </div>
     <div class="detail-head">
       ${portrait}
       <div style="flex:1;min-width:0">
-        <div class="detail-title">${c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':''}${esc(c.title||c.name||"無題")}</div>
-        <div class="detail-name">${esc(c.name||"")}${c.kana?`<span class="detail-kana">${esc(c.kana)}</span>`:""}</div>
+        <div class="detail-name-main">${c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':''}${esc(c.name||c.title||"無名")}</div>
+        ${c.kana?`<div class="detail-kana">${esc(c.kana)}</div>`:""}
+        ${c.title?`<div class="detail-title-sub">${esc(c.title)}</div>`:""}
         <div class="detail-sub sans">
           ${esc(profileLine(c))}<br>
           ${c.origin?"出身："+esc(c.origin)+"　":""}
@@ -1066,34 +1097,39 @@ function openDetail(id){
       </div>
     </div>
 
-    <div class="kana-edit-row sans">
+    <div class="kana-edit-row editable-row sans">
+      <label>名前</label>
+      <input type="text" id="nameInput" placeholder="キャラクター名" value="${esc(c.name||"")}" maxlength="60">
+    </div>
+
+    <div class="kana-edit-row editable-row sans">
       <label>読み仮名</label>
       <input type="text" id="kanaInput" placeholder="なまえのよみがな" value="${esc(c.kana||"")}" maxlength="40">
     </div>
 
-    <div class="color-edit-row sans">
+    <div class="color-edit-row editable-row sans">
       <label>発言色</label>
       <span class="color-swatch" id="colorSwatch" style="background:${isValidColor(c.color)?esc(c.color):"transparent"}"></span>
       <input type="text" id="colorInput" placeholder="#RRGGBB" value="${esc(c.color||"")}" maxlength="7">
     </div>
 
-    <div class="spoiler-toggle-row sans">
+    <div class="spoiler-toggle-row editable-row sans">
       <div class="toggle ${c.hasSpoiler?'on':''}" id="spoilerToggle"></div>
       <span>⚠ ネタバレ注意マークをつける</span>
     </div>
 
-    <div class="section-label sans">タグ</div>
+    <div class="section-label sans tag-section">タグ</div>
     <div class="utag-row" id="utagRow">${userTagChips||'<span class="sans" style="color:var(--ink-faint);font-size:12px">タグなし</span>'}</div>
-    <div class="utag-add sans">
+    <div class="utag-add editable-row sans">
       <input type="text" id="utagInput" placeholder="タグを入力" maxlength="20">
       <button class="btn sans" id="utagAddBtn">追加</button>
     </div>
 
     <div class="toolbar" style="margin-top:18px">
       <button class="btn btn-primary sans" id="paletteBtn">⚄ チャットパレット作成</button>
-      <button class="btn sans" id="addImgBtn">⌖ 画像を追加</button>
-      ${c.imageId?'<button class="btn btn-ghost sans" id="rmImgBtn">画像を削除</button>':''}
-      <button class="btn btn-ghost sans" id="delCharBtn" style="margin-left:auto;color:var(--blood)">この探索者を削除</button>
+      <button class="btn sans edit-only" id="addImgBtn">⌖ 画像を追加</button>
+      ${c.imageId?'<button class="btn btn-ghost sans edit-only" id="rmImgBtn">画像を削除</button>':''}
+      <button class="btn btn-ghost sans edit-only" id="delCharBtn" style="margin-left:auto;color:var(--blood)">この探索者を削除</button>
     </div>
 
     <div class="section-label sans">能力値</div>
@@ -1107,15 +1143,21 @@ function openDetail(id){
     </div>
     ${skillHtml}
 
-    <div class="section-label sans">覚えている魔術</div>
-    <textarea class="lore-area" id="spellsArea" placeholder="習得した魔術を記入（例：クトゥルフの招来／contact、暗示 など）">${esc(c.spells||"")}</textarea>
+    <div class="lore-block ${c.spells?'':'empty'}">
+      <div class="section-label sans">覚えている魔術</div>
+      <textarea class="lore-area" id="spellsArea" placeholder="習得した魔術を記入（例：クトゥルフの招来／contact、暗示 など）">${esc(c.spells||"")}</textarea>
+    </div>
 
-    <div class="section-label sans">出会った神話生物</div>
-    <textarea class="lore-area" id="creaturesArea" placeholder="遭遇した神話生物・神格を記入">${esc(c.creatures||"")}</textarea>
+    <div class="lore-block ${c.creatures?'':'empty'}">
+      <div class="section-label sans">出会った神話生物</div>
+      <textarea class="lore-area" id="creaturesArea" placeholder="遭遇した神話生物・神格を記入">${esc(c.creatures||"")}</textarea>
+    </div>
 
-    <div class="section-label sans">秘匿メモ</div>
-    <div id="secretMemoList"></div>
-    <button class="btn sans" id="addMemoBtn" style="margin-top:4px">＋ 秘匿メモを追加</button>
+    <div class="lore-block secret-block ${(c.secretMemos&&c.secretMemos.length)?'':'empty'}">
+      <div class="section-label sans">秘匿メモ</div>
+      <div id="secretMemoList"></div>
+      <button class="btn sans edit-only" id="addMemoBtn" style="margin-top:4px">＋ 秘匿メモを追加</button>
+    </div>
 
     ${memo?`<div class="section-label sans">メモ（保管所）</div><div class="memo">${esc(memo)}</div>`:""}
     <input type="file" id="imgInput" accept="image/*" class="hidden">
@@ -1128,6 +1170,20 @@ function openDetail(id){
 // 詳細ページのイベント束ね
 function bindDetailEvents(c){
   $("#backBtn").addEventListener("click",closeDetail);
+  // 編集モードのトグル
+  $("#editToggleBtn").addEventListener("click",()=>{
+    const wrap=$("#detailWrap");
+    const on=wrap.classList.toggle("edit-mode");
+    const btn=$("#editToggleBtn");
+    if(on){
+      btn.textContent="✓ 保存";
+      btn.classList.add("saving");
+    }else{
+      btn.textContent="✎ 編集";
+      btn.classList.remove("saving");
+      toast("編集を保存しました");
+    }
+  });
   $("#initToggle").addEventListener("click",toggleInit);
   $("#addImgBtn").addEventListener("click",()=>$("#imgInput").click());
   $("#imgInput").addEventListener("change",onImagePick);
@@ -1135,14 +1191,31 @@ function bindDetailEvents(c){
   $("#delCharBtn").addEventListener("click",deleteCurrent);
   $("#paletteBtn").addEventListener("click",()=>openPalette(c));
 
-  // 読み仮名(入力が止まったら保存し、即座にタイトル下も更新)
+  // 名前(編集したら手編集として保持。保管所更新で上書きされない)
+  let nt;
+  $("#nameInput").addEventListener("input",e=>{
+    clearTimeout(nt);nt=setTimeout(async()=>{
+      c.name=e.target.value.trim();
+      c.nameEdited=true;  // 編集済みフラグ
+      await saveCharacter(c);
+      const nameEl=$("#detailWrap .detail-name-main");
+      if(nameEl)nameEl.innerHTML=(c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':'')+esc(c.name||c.title||"無名");
+    },500);
+  });
+
+  // 読み仮名(入力が止まったら保存)
   let kt;
   $("#kanaInput").addEventListener("input",e=>{
     clearTimeout(kt);kt=setTimeout(async()=>{
       c.kana=e.target.value.trim();
       await saveCharacter(c);
-      const nameEl=$("#detailWrap .detail-name");
-      if(nameEl)nameEl.innerHTML=esc(c.name||"")+(c.kana?`<span class="detail-kana">${esc(c.kana)}</span>`:"");
+      // 読み仮名の表示を更新(名前の下)
+      let kanaEl=$("#detailWrap .detail-kana");
+      const nameMain=$("#detailWrap .detail-name-main");
+      if(c.kana){
+        if(kanaEl){kanaEl.textContent=c.kana;}
+        else if(nameMain){nameMain.insertAdjacentHTML("afterend",`<div class="detail-kana">${esc(c.kana)}</div>`);}
+      }else if(kanaEl){kanaEl.remove();}
     },500);
   });
 
@@ -1162,9 +1235,9 @@ function bindDetailEvents(c){
   $("#spoilerToggle").addEventListener("click",async()=>{
     c.hasSpoiler=!c.hasSpoiler;
     $("#spoilerToggle").classList.toggle("on",c.hasSpoiler);
-    // タイトルの⚠も即時反映
-    const titleEl=$("#detailWrap .detail-title");
-    titleEl.innerHTML=(c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':'')+esc(c.title||c.name||"無題");
+    // 名前の⚠も即時反映
+    const nameEl=$("#detailWrap .detail-name-main");
+    if(nameEl)nameEl.innerHTML=(c.hasSpoiler?'<span class="spoiler-badge" title="ネタバレ注意">⚠</span>':'')+esc(c.name||c.title||"無名");
     await saveCharacter(c);
     toast(c.hasSpoiler?"ネタバレ注意をつけました":"ネタバレ注意を外しました");
   });
@@ -1214,7 +1287,7 @@ function refreshUtags(c){
 function renderSecretMemos(c){
   const wrap=$("#secretMemoList");
   if(!c.secretMemos||c.secretMemos.length===0){
-    wrap.innerHTML='<p class="sans" style="color:var(--ink-faint);font-size:12px;margin-bottom:8px">秘匿メモはまだありません。下のボタンから追加できます。</p>';
+    wrap.innerHTML='<p class="sans secret-empty-msg" style="color:var(--ink-faint);font-size:12px;margin-bottom:8px">秘匿メモはまだありません。編集モードで追加できます。</p>';
     return;
   }
   wrap.innerHTML=c.secretMemos.map((m,i)=>`
