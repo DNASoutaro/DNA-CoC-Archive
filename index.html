@@ -239,13 +239,14 @@ body.detail-mode .detail-wrap{display:block}
 .skill-list{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
 @media(max-width:520px){.skill-list{grid-template-columns:1fr}.stat-grid{grid-template-columns:repeat(3,1fr)}}
 .skill-row{
-  display:flex;align-items:baseline;gap:8px;padding:5px 8px;
+  display:flex;align-items:flex-start;gap:8px;padding:5px 8px;
   border-bottom:1px dotted var(--line);font-size:14px;
 }
 .skill-row.initial{color:var(--skill-initial)}
 .skill-row.allocated .sv{color:var(--verdigris-bright);font-weight:700}
 .skill-row.allocated .sn{color:#eef4f8}
-.skill-row .sn{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.skill-row .sn{flex:1;min-width:0}
+.skill-bd{display:block;font-size:10px;color:var(--ink-faint);font-family:"Hiragino Sans",sans-serif;white-space:normal;line-height:1.4;margin-top:1px}
 .skill-row .sn .sub{font-size:11px;color:var(--ink-faint);font-family:"Hiragino Sans",sans-serif}
 .skill-row .sv{font-family:"Hiragino Sans",sans-serif;font-variant-numeric:tabular-nums;font-size:14px;color:inherit}
 .skill-row .mark{color:var(--verdigris);font-size:11px;width:10px}
@@ -977,6 +978,27 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","
 
 // ---- 表示: 詳細 ----
 let currentDetailId=null;
+
+// 技能の内訳文字列。breakdownがあれば項目別、なければ初期値+振り分け分にフォールバック
+function skillBreakdownText(s){
+  const b=s.breakdown;
+  if(b && typeof b==="object"){
+    const labels=[["initial","初期値"],["job","職業"],["interest","興味"],["growth","成長"],["other","補正"]];
+    const parts=[];
+    labels.forEach(([k,lbl])=>{
+      const v=b[k];
+      if(typeof v==="number" && v!==0)parts.push(`${lbl}${v}%`);
+    });
+    if(parts.length)return parts.join("＋");
+  }
+  if(typeof s.initial==="number"){
+    const alloc=s.value-s.initial;
+    if(alloc>0)return `初期値${s.initial}%＋振り分け${alloc}%`;
+    return `初期値${s.initial}%`;
+  }
+  return "";
+}
+
 function openDetail(id){
   const c=characters.find(x=>x.id===id);
   if(!c)return;
@@ -1013,9 +1035,11 @@ function openDetail(id){
       const hideCls=(!s.isAllocated)?"hidden-initial":"";
       const sub=s.subname?`<span class="sub">（${esc(s.subname)}）</span>`:"";
       const mark=s.isAllocated?"◆":"";
+      const bd=skillBreakdownText(s);
+      const bdHtml=bd?`<span class="skill-bd">${esc(bd)}</span>`:"";
       return `<div class="skill-row ${cls} ${hideCls}">
         <span class="mark">${mark}</span>
-        <span class="sn">${esc(s.name)}${sub}</span>
+        <span class="sn">${esc(s.name)}${sub}${bdHtml}</span>
         <span class="sv">${s.value}%</span></div>`;
     }).join("");
     skillHtml+=`<div class="section-label sans">${cat}</div><div class="skill-list">${rows}</div>`;
