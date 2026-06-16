@@ -275,7 +275,7 @@ body.show-initial .skill-row.hidden-initial{display:flex}
 #detailWrap.edit-mode .edit-only{display:inline-flex !important}
 /* 閲覧時はテキストエリア等を編集不可に */
 #detailWrap:not(.edit-mode) .lore-area{pointer-events:none;opacity:.95}
-#detailWrap:not(.edit-mode) .lore-block.empty{display:none}
+#detailWrap:not(.edit-mode) .fold-block.empty{display:none}
 #detailWrap:not(.edit-mode) .secret-title{pointer-events:none}
 #detailWrap:not(.edit-mode) .secret-body{pointer-events:none}
 #detailWrap:not(.edit-mode) .secret-del{display:none}
@@ -386,6 +386,20 @@ textarea.paste{
   border:1px solid var(--line);border-radius:var(--radius);padding:12px;font-size:14px;
   line-height:1.7;resize:vertical;font-family:inherit}
 .lore-area::placeholder{color:var(--ink-faint)}
+
+/* 折り畳みセクション(魔術・神話生物・秘匿メモ) */
+.fold-block{margin-top:14px;border-top:1px solid var(--line)}
+.fold-head{width:100%;background:none;border:none;cursor:pointer;
+  display:flex;align-items:center;gap:8px;padding:12px 2px;
+  font-family:"Hiragino Sans",sans-serif;font-size:13px;letter-spacing:.12em;
+  color:var(--ink-dim);text-align:left}
+.fold-head:hover{color:var(--brass)}
+.fold-arrow{font-size:10px;color:var(--brass-dim);flex-shrink:0}
+.fold-badge{margin-left:6px;font-size:10px;color:var(--brass);
+  background:var(--abyss-3);border:1px solid var(--brass-dim);border-radius:999px;
+  min-width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;letter-spacing:0}
+.fold-body{display:none;padding:0 2px 8px}
+.fold-block.open .fold-body{display:block}
 
 /* 秘匿メモ(折りたたみ式) */
 .secret-memo{background:var(--abyss-2);border:1px solid var(--line);
@@ -1143,20 +1157,32 @@ function openDetail(id){
     </div>
     ${skillHtml}
 
-    <div class="lore-block ${c.spells?'':'empty'}">
-      <div class="section-label sans">覚えている魔術</div>
-      <textarea class="lore-area" id="spellsArea" placeholder="習得した魔術を記入（例：クトゥルフの招来／contact、暗示 など）">${esc(c.spells||"")}</textarea>
+    <div class="fold-block ${c.spells?'':'empty'}" id="spellsBlock">
+      <button class="fold-head sans" data-fold="spells">
+        <span class="fold-arrow">▶</span>覚えている魔術
+      </button>
+      <div class="fold-body">
+        <textarea class="lore-area" id="spellsArea" placeholder="習得した魔術を記入（例：クトゥルフの招来／contact、暗示 など）">${esc(c.spells||"")}</textarea>
+      </div>
     </div>
 
-    <div class="lore-block ${c.creatures?'':'empty'}">
-      <div class="section-label sans">出会った神話生物</div>
-      <textarea class="lore-area" id="creaturesArea" placeholder="遭遇した神話生物・神格を記入">${esc(c.creatures||"")}</textarea>
+    <div class="fold-block ${c.creatures?'':'empty'}" id="creaturesBlock">
+      <button class="fold-head sans" data-fold="creatures">
+        <span class="fold-arrow">▶</span>出会った神話生物
+      </button>
+      <div class="fold-body">
+        <textarea class="lore-area" id="creaturesArea" placeholder="遭遇した神話生物・神格を記入">${esc(c.creatures||"")}</textarea>
+      </div>
     </div>
 
-    <div class="lore-block secret-block ${(c.secretMemos&&c.secretMemos.length)?'':'empty'}">
-      <div class="section-label sans">秘匿メモ</div>
-      <div id="secretMemoList"></div>
-      <button class="btn sans edit-only" id="addMemoBtn" style="margin-top:4px">＋ 秘匿メモを追加</button>
+    <div class="fold-block secret-block ${(c.secretMemos&&c.secretMemos.length)?'':'empty'}" id="secretBlock">
+      <button class="fold-head sans" data-fold="secret">
+        <span class="fold-arrow">▶</span>秘匿メモ${(c.secretMemos&&c.secretMemos.length)?`<span class="fold-badge">${c.secretMemos.length}</span>`:''}
+      </button>
+      <div class="fold-body">
+        <div id="secretMemoList"></div>
+        <button class="btn sans edit-only" id="addMemoBtn" style="margin-top:4px">＋ 秘匿メモを追加</button>
+      </div>
     </div>
 
     ${memo?`<div class="section-label sans">メモ（保管所）</div><div class="memo">${esc(memo)}</div>`:""}
@@ -1170,6 +1196,15 @@ function openDetail(id){
 // 詳細ページのイベント束ね
 function bindDetailEvents(c){
   $("#backBtn").addEventListener("click",closeDetail);
+  // 折り畳みセクション(魔術・神話生物・秘匿メモ)の開閉。閲覧モードでも開閉可能
+  $$("#detailWrap .fold-head").forEach(head=>{
+    head.addEventListener("click",()=>{
+      const block=head.closest(".fold-block");
+      block.classList.toggle("open");
+      const arr=head.querySelector(".fold-arrow");
+      if(arr)arr.textContent=block.classList.contains("open")?"▼":"▶";
+    });
+  });
   // 編集モードのトグル
   $("#editToggleBtn").addEventListener("click",()=>{
     const wrap=$("#detailWrap");
@@ -1271,9 +1306,17 @@ function bindDetailEvents(c){
 
   // 秘匿メモ追加
   $("#addMemoBtn").addEventListener("click",async()=>{
-    c.secretMemos.push({title:"",body:"",open:true});
+    c.secretMemos.push({title:"",body:""});
     await saveCharacter(c);
     renderSecretMemos(c);
+    // 追加した最後のメモを開いた状態にして入力しやすく
+    const memos=$$("#secretMemoList .secret-memo");
+    const last=memos[memos.length-1];
+    if(last){
+      last.classList.add("open");
+      const tg=last.querySelector(".secret-toggle");
+      if(tg)tg.textContent="▼";
+    }
   });
 }
 
@@ -1283,7 +1326,7 @@ function refreshUtags(c){
   $("#utagRow").innerHTML=chips||'<span class="sans" style="color:var(--ink-faint);font-size:12px">タグなし</span>';
 }
 
-// 秘匿メモの描画(折りたたみ式・複数)
+// 秘匿メモの描画(折りたたみ式・複数)。初期状態は常に折り畳み。
 function renderSecretMemos(c){
   const wrap=$("#secretMemoList");
   if(!c.secretMemos||c.secretMemos.length===0){
@@ -1291,23 +1334,22 @@ function renderSecretMemos(c){
     return;
   }
   wrap.innerHTML=c.secretMemos.map((m,i)=>`
-    <div class="secret-memo ${m.open?'open':''}" data-idx="${i}">
+    <div class="secret-memo" data-idx="${i}">
       <div class="secret-head">
-        <button class="secret-toggle" data-toggle="${i}">${m.open?'▼':'▶'}</button>
+        <button class="secret-toggle" data-toggle="${i}" type="button">▶</button>
         <input class="secret-title" data-title="${i}" value="${esc(m.title||'')}" placeholder="見出し（例：HO、正体、真相）">
-        <button class="secret-del" data-memodel="${i}" title="削除">✕</button>
+        <button class="secret-del edit-only" data-memodel="${i}" title="削除" type="button">✕</button>
       </div>
       <div class="secret-body-wrap">
         <textarea class="secret-body" data-body="${i}" placeholder="伏せておきたい内容を記入">${esc(m.body||'')}</textarea>
       </div>
     </div>`).join("");
 
-  // 折りたたみ
-  wrap.querySelectorAll(".secret-toggle").forEach(b=>b.addEventListener("click",async()=>{
-    const i=parseInt(b.dataset.toggle,10);
-    c.secretMemos[i].open=!c.secretMemos[i].open;
-    await saveCharacter(c);
-    renderSecretMemos(c);
+  // 折りたたみ(開閉はDOMのクラス操作のみ。状態は保存しない=次に開くと閉じた状態)
+  wrap.querySelectorAll(".secret-toggle").forEach(b=>b.addEventListener("click",()=>{
+    const memo=b.closest(".secret-memo");
+    const opened=memo.classList.toggle("open");
+    b.textContent=opened?"▼":"▶";
   }));
   // 見出し編集
   wrap.querySelectorAll(".secret-title").forEach(inp=>{
