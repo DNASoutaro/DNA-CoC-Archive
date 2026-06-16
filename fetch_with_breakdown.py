@@ -246,12 +246,14 @@ def fetch_breakdown_map(chara_id, page):
     url = f"{BASE}/{chara_id}"
     bd = {}
     # 見出しキーワード → breakdownのキー
+    # 注意: 技能表の左端には「成長」チェックボックス列があるため、
+    #       growthは「成長分」に限定し、ただの「成長」に誤マッチしないようにする。
     COLMAP = [
-        ("initial", ["初期", "初期値"]),
+        ("initial", ["初期値", "初期"]),
         ("job", ["職業"]),
         ("interest", ["興味", "趣味"]),
-        ("growth", ["成長", "成長分"]),
-        ("other", ["その他", "他", "補正"]),
+        ("growth", ["成長分"]),
+        ("other", ["その他", "補正"]),
     ]
     try:
         page.goto(url, timeout=30000, wait_until="networkidle")
@@ -261,9 +263,9 @@ def fetch_breakdown_map(chara_id, page):
             rows = table.query_selector_all("tr")
             if not rows:
                 continue
-            # ヘッダ行から各列の意味を特定
+            # ヘッダ行から各列の意味を特定(改行・空白を除去してマッチ)
             header_cells = rows[0].query_selector_all("th, td")
-            header_texts = [(c.inner_text() or "").strip() for c in header_cells]
+            header_texts = [re.sub(r"\s+", "", (c.inner_text() or "")) for c in header_cells]
             col_idx = {}  # breakdownキー -> 列番号
             for ci, htext in enumerate(header_texts):
                 for key, kws in COLMAP:
@@ -274,32 +276,59 @@ def fetch_breakdown_map(chara_id, page):
             # 初期値列が見つからないテーブルは技能表でないと判断しスキップ
             if "initial" not in col_idx:
                 continue
+            init_ci = col_idx["initial"]
+            # 初期値より左にマッチした列(チェックボックス列「成長」等の誤マッチ)は破棄
+            col_idx = {k: v for k, v in col_idx.items() if v >= init_ci}
+            # 合計列も特定(整合性チェック用)
+            total_ci = None
+            for ci, htext in enumerate(header_texts):
+                if "合計" in htext:
+                    total_ci = ci
+                    break
             # データ行を走査
             for row in rows[1:]:
                 cells = row.query_selector_all("th, td")
                 if not cells:
                     continue
-                # 技能名: 《》を含むセル or 先頭の非数値セル
+                # 技能名: 《》を含むセル / input(技能名欄)のvalue / 先頭の非数値セル
                 label = None
                 for cell in cells:
                     t = (cell.inner_text() or "").strip()
                     if "《" in t or (t and not t.replace("%", "").strip().lstrip("-").isdigit()):
                         label = t.replace("《", "").replace("》", "").strip()
                         break
+                    # 技能名が入力欄(杖など武道系)の場合: input value を技能名候補に
+                    inp = cell.query_selector("input[type='text']")
+                    if inp:
+                        iv = (inp.get_attribute("value") or "").strip()
+                        if iv and not iv.lstrip("-").isdigit():
+                            label = iv
+                            break
                 if not label:
                     continue
+
                 def cell_int(ci):
                     if ci is None or ci >= len(cells):
                         return 0
                     cell = cells[ci]
-                    # input優先、なければテキスト
                     inp = cell.query_selector("input")
                     raw = (inp.get_attribute("value") if inp else cell.inner_text()) or ""
                     raw = raw.strip()
                     return int(raw) if raw.lstrip("-").isdigit() else 0
+
                 entry = {}
                 for key, _ in COLMAP:
                     entry[key] = cell_int(col_idx.get(key))
+
+                # 整合性チェック: 内訳合計が合計値と一致しない場合、差分をotherに寄せる
+                total_val = cell_int(total_ci) if total_ci is not None else None
+                bd_sum = sum(entry.values())
+                if total_val and total_val > 0 and bd_sum != total_val:
+                    diff = total_val - bd_sum
+                    # 差分が正なら未取得分があるとみなしotherへ加算(負なら無視)
+                    if diff > 0:
+                        entry["other"] = entry.get("other", 0) + diff
+
                 if any(entry.values()):
                     base, _ = split_subname(label)
                     bd[base] = entry
