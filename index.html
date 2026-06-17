@@ -338,6 +338,11 @@ textarea.paste{
 .preview-box b{color:var(--brass)}
 
 .hidden{display:none!important}
+.pub-field{margin-bottom:10px}
+.pub-field label{display:block;font-size:11px;color:var(--ink-faint);margin-bottom:4px;letter-spacing:.05em}
+.pub-input{width:100%;background:var(--abyss);color:var(--ink);border:1px solid var(--line);
+  border-radius:var(--radius);padding:9px 12px;font-size:14px;font-family:"Hiragino Sans",monospace}
+.pub-input:focus{outline:none;border-color:var(--brass-dim)}
 
 /* 名前検索ボックス */
 .search-row{position:relative;margin-bottom:12px}
@@ -447,6 +452,7 @@ textarea.paste{
       <button class="btn btn-primary sans" id="pasteBtn">＋ テキスト追加</button>
       <button class="btn sans" id="importBtn">JSON取り込み</button>
       <button class="btn btn-ghost sans" id="exportBtn">バックアップ</button>
+      <button class="btn btn-ghost sans" id="publishBtn">🌐 公開</button>
     </div>
     <div class="search-row">
       <input type="search" id="searchInput" class="search-input sans" placeholder="🔍 名前・読み仮名で検索（ひらがな/カタカナ問わず）" autocomplete="off">
@@ -589,6 +595,35 @@ textarea.paste{
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost sans" id="backupDone">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 公開モーダル -->
+<div class="modal-scrim" id="publishModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 class="sans">サイトに公開</h3>
+      <button class="btn btn-ghost sans" id="pubClose">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="pubInfo" class="sans" style="font-size:13px"></p>
+      <p class="sans" style="font-size:12px;color:var(--ink-faint);margin:8px 0">
+        GitHubのトークンが必要です。初回のみ入力すれば、以降はこの端末に保存され省略できます。
+      </p>
+      <div class="pub-field"><label class="sans">GitHubユーザー名</label>
+        <input type="text" id="pubOwner" class="pub-input" placeholder="dnasoutaro" autocomplete="off"></div>
+      <div class="pub-field"><label class="sans">リポジトリ名</label>
+        <input type="text" id="pubRepo" class="pub-input" placeholder="DNA-CoC-Archive" autocomplete="off"></div>
+      <div class="pub-field"><label class="sans">アクセストークン</label>
+        <input type="password" id="pubToken" class="pub-input" placeholder="github_pat_..." autocomplete="off"></div>
+      <p class="sans" style="font-size:11px;color:var(--ink-faint);margin-top:8px">
+        トークンはこの端末内にのみ保存され、外部には送信されません(GitHub以外)。
+      </p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost sans" id="pubCancel">キャンセル</button>
+      <button class="btn btn-primary sans" id="pubExecBtn">この内容で公開する</button>
     </div>
   </div>
 </div>
@@ -786,7 +821,7 @@ let state={
 const USER_FIELDS=["userTags","hasSpoiler","secretMemos","spells","creatures","kana","imageId","color"];
 
 // 自動取得JSONを既存データにマージ(charaIdをキーに)
-async function mergeFromAuto(autoData){
+async function mergeFromAuto(autoData, isFull){
   if(!autoData||!Array.isArray(autoData.characters))return 0;
   // 既存をcharaIdで索引
   const byCharaId={};
@@ -797,22 +832,31 @@ async function mergeFromAuto(autoData){
     const fresh = (raw.skills&&raw.stats) ? raw : parseCharacter(raw.rawText||"", raw.charaId, {tags:raw.tags||[]});
     const existing = raw.charaId ? byCharaId[raw.charaId] : null;
     if(existing){
-      // 保管所由来データを更新、手編集フィールドは既存を保持
+      // 保管所由来データを更新、手編集フィールドは既存(本人の編集)を優先
       const merged={...fresh, id:existing.id};
       USER_FIELDS.forEach(f=>{ merged[f]=existing[f]; });
-      // 名前を手編集していれば、その名前とフラグを保持(保管所の名前で上書きしない)
       if(existing.nameEdited){
         merged.name=existing.name;
         merged.nameEdited=true;
       }
-      // 新フィールド未定義の保証
       ensureFields(merged);
       await dbPut("characters",merged);
       updated++;
     }else{
-      ensureFields(fresh);
-      if(!fresh.id)fresh.id="c_"+(fresh.charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7));
-      await dbPut("characters",fresh);
+      // 新規キャラ。公開データ(isFull)なら手編集フィールドもそのまま取り込む
+      if(isFull){
+        // rawがバックアップ形式(手編集込み)ならrawを優先、そうでなければfresh
+        const full = (raw.skills&&raw.stats) ? raw : fresh;
+        USER_FIELDS.forEach(f=>{ if(raw[f]!==undefined) full[f]=raw[f]; });
+        if(raw.nameEdited){ full.name=raw.name; full.nameEdited=true; }
+        ensureFields(full);
+        if(!full.id)full.id="c_"+(full.charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7));
+        await dbPut("characters",full);
+      }else{
+        ensureFields(fresh);
+        if(!fresh.id)fresh.id="c_"+(fresh.charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7));
+        await dbPut("characters",fresh);
+      }
       added++;
     }
   }
@@ -838,17 +882,20 @@ function ensureFields(c){
 
 async function loadAll(){
   characters=await dbAll("characters");
-  // 起動時、同リポジトリのcharacters.jsonを自動読込してマージ
+  // 起動時、公開用(characters_full.json)を優先、なければ自動更新用(characters.json)を読む
   let autoLoaded=false;
-  try{
-    const res=await fetch("characters.json?_="+Date.now(),{cache:"no-store"});
-    if(res.ok){
-      const autoData=await res.json();
-      const r=await mergeFromAuto(autoData);
-      autoLoaded=true;
-      if(r&&(r.added||r.updated))setTimeout(()=>toast(`自動更新: 新規${r.added} / 更新${r.updated}`),800);
-    }
-  }catch(e){/* characters.jsonが無い/取得失敗時は従来通り */}
+  for(const fname of ["characters_full.json","characters.json"]){
+    try{
+      const res=await fetch(fname+"?_="+Date.now(),{cache:"no-store"});
+      if(res.ok){
+        const autoData=await res.json();
+        const r=await mergeFromAuto(autoData, fname==="characters_full.json");
+        autoLoaded=true;
+        if(r&&(r.added||r.updated))setTimeout(()=>toast(`更新: 新規${r.added} / 更新${r.updated}`),800);
+        break;  // どちらか読めたら終了
+      }
+    }catch(e){/* 無い/失敗時は次を試す */}
+  }
   // 自動読込も既存も無ければSEED投入
   if(characters.length===0 && !autoLoaded && SEED){
     for(const c of SEED.characters){
@@ -1744,6 +1791,75 @@ async function copyBackup(){
     ta.setAttribute("readonly","");
   }
 }
+
+// ===== 公開機能(GitHubへ手編集込みJSONを書き込む) =====
+const PUB_CFG_KEY="coc_publish_cfg";
+function loadPubCfg(){
+  try{ return JSON.parse(localStorage.getItem(PUB_CFG_KEY)||"{}"); }catch(e){ return {}; }
+}
+function savePubCfg(cfg){
+  try{ localStorage.setItem(PUB_CFG_KEY, JSON.stringify(cfg)); }catch(e){}
+}
+
+// 公開用JSONを生成(手編集込み・画像は除外して軽量化)
+function buildPublishJSON(){
+  // characters から内部用フィールドを除外しつつ、手編集は含める
+  const out=characters.map(c=>{
+    const {_updatedAt,_txtHash,...rest}=c;
+    // 画像は重いので公開データには含めない(imageIdは残すが画像本体は配らない)
+    return rest;
+  });
+  return JSON.stringify({system:"CoC6",published:true,publishedAt:new Date().toISOString(),
+    count:out.length, characters:out});
+}
+
+function openPublishModal(){
+  const cfg=loadPubCfg();
+  $("#pubOwner").value=cfg.owner||"";
+  $("#pubRepo").value=cfg.repo||"";
+  $("#pubToken").value=cfg.token||"";
+  const kb=Math.round(buildPublishJSON().length/1024);
+  $("#pubInfo").textContent=`公開すると ${characters.length}体 のデータ(約${kb}KB・画像除く)がサイトに反映され、URLを知る人が閲覧できます。秘匿メモも含まれます。`;
+  $("#publishModal").classList.add("open");
+}
+
+async function doPublish(){
+  const owner=$("#pubOwner").value.trim();
+  const repo=$("#pubRepo").value.trim();
+  const token=$("#pubToken").value.trim();
+  if(!owner||!repo||!token){ toast("ユーザー名・リポジトリ名・トークンを入力してください"); return; }
+  savePubCfg({owner,repo,token});
+  const btn=$("#pubExecBtn");
+  btn.disabled=true; btn.textContent="公開中…";
+  try{
+    const path="characters_full.json";
+    const apiBase=`https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+    const headers={"Authorization":`Bearer ${token}`,"Accept":"application/vnd.github+json"};
+    // 既存ファイルのSHAを取得(更新に必要)
+    let sha=null;
+    try{
+      const getRes=await fetch(apiBase+"?_="+Date.now(),{headers,cache:"no-store"});
+      if(getRes.ok){ const j=await getRes.json(); sha=j.sha; }
+    }catch(e){}
+    // 内容をBase64化(UTF-8対応)
+    const content=buildPublishJSON();
+    const b64=btoa(unescape(encodeURIComponent(content)));
+    const body={ message:`公開データ更新 ${new Date().toISOString()}`, content:b64 };
+    if(sha)body.sha=sha;
+    const putRes=await fetch(apiBase,{method:"PUT",headers,body:JSON.stringify(body)});
+    if(putRes.ok){
+      toast("公開しました。サイトに反映されます(数十秒〜数分)");
+      $("#publishModal").classList.remove("open");
+    }else{
+      const err=await putRes.json().catch(()=>({}));
+      toast("公開失敗: "+(err.message||putRes.status));
+    }
+  }catch(e){
+    toast("公開エラー: "+e.message);
+  }finally{
+    btn.disabled=false; btn.textContent="この内容で公開する";
+  }
+}
 function downloadBackup(){
   try{
     const blob=new Blob([_backupJSON],{type:"application/json"});
@@ -1875,6 +1991,12 @@ async function init(){
   $("#importCancel").addEventListener("click",()=>$("#importModalWrap").classList.remove("open"));
   $("#importModalWrap").addEventListener("click",e=>{if(e.target.id==="importModalWrap")$("#importModalWrap").classList.remove("open");});
   $("#exportBtn").addEventListener("click",exportJSON);
+  // 公開
+  $("#publishBtn").addEventListener("click",openPublishModal);
+  $("#pubClose").addEventListener("click",()=>$("#publishModal").classList.remove("open"));
+  $("#pubCancel").addEventListener("click",()=>$("#publishModal").classList.remove("open"));
+  $("#pubExecBtn").addEventListener("click",doPublish);
+  $("#publishModal").addEventListener("click",e=>{if(e.target.id==="publishModal")$("#publishModal").classList.remove("open");});
   // チャットパレット
   $("#copyPalette").addEventListener("click",()=>copyText(_paletteText,"チャットパレットをコピーしました"));
   $("#copyPiece").addEventListener("click",()=>{
