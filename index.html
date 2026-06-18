@@ -820,6 +820,13 @@ let state={
 // 手編集フィールド(保管所更新でも保持する項目)
 const USER_FIELDS=["userTags","hasSpoiler","secretMemos","spells","creatures","kana","imageId","color"];
 
+// 保管所由来データが実際に変化したかの判定用シグネチャ。
+// rawTextが同一なら(同じパーサで処理する以上)中身も同一とみなせる。
+function autoSig(c){
+  if(c && typeof c.rawText==="string" && c.rawText) return "R:"+c.rawText;
+  return "J:"+JSON.stringify([c&&c.stats, c&&c.skills, c&&c.name, c&&c.title]);
+}
+
 // 自動取得JSONを既存データにマージ(charaIdをキーに)
 async function mergeFromAuto(autoData, isFull){
   if(!autoData||!Array.isArray(autoData.characters))return 0;
@@ -835,16 +842,27 @@ async function mergeFromAuto(autoData, isFull){
     const fresh = (raw.skills&&raw.stats) ? raw : parseCharacter(raw.rawText||"", raw.charaId, {tags:raw.tags||[]});
     const existing = raw.charaId ? byCharaId[raw.charaId] : null;
     if(existing){
-      // 保管所由来データを更新、手編集フィールドは既存(本人の編集)を優先
-      const merged={...fresh, id:existing.id};
+      // 保管所由来データを更新、手編集フィールドは既存(本人の編集)を優先。
+      // createdAt/updatedAt は端末側の記録なので保管所データで消さず保持する。
+      const merged={...fresh, id:existing.id,
+        createdAt: existing.createdAt || Date.now(),
+        updatedAt: existing.updatedAt || Date.now()};
       USER_FIELDS.forEach(f=>{ merged[f]=existing[f]; });
       if(existing.nameEdited){
         merged.name=existing.name;
         merged.nameEdited=true;
       }
       ensureFields(merged);
-      await dbPut("characters",merged);
-      updated++;
+      const changed = autoSig(existing)!==autoSig(fresh);
+      const needRepair = (existing.createdAt===undefined || existing.updatedAt===undefined);
+      if(changed){
+        merged.updatedAt=Date.now();   // 実際に保管所側が変わったものだけ更新時刻を進める
+        await dbPut("characters",merged);
+        updated++;
+      }else if(needRepair){
+        await dbPut("characters",merged); // タイムスタンプ欠落データの一度きりの補修(通知はしない)
+      }
+      // 変化なし & タイムスタンプ健全 → 書き込みもカウントもしない(毎回の無駄な再書き込みを防止)
     }else{
       // 新規キャラ。公開データ(isFull)なら手編集フィールドもそのまま取り込む
       if(isFull){
@@ -854,10 +872,14 @@ async function mergeFromAuto(autoData, isFull){
         if(raw.nameEdited){ full.name=raw.name; full.nameEdited=true; }
         ensureFields(full);
         if(!full.id)full.id="c_"+(full.charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7));
+        if(!full.createdAt)full.createdAt=Date.now();
+        if(!full.updatedAt)full.updatedAt=Date.now();
         await dbPut("characters",full);
       }else{
         ensureFields(fresh);
         if(!fresh.id)fresh.id="c_"+(fresh.charaId||Date.now()+"_"+Math.random().toString(36).slice(2,7));
+        if(!fresh.createdAt)fresh.createdAt=Date.now();
+        if(!fresh.updatedAt)fresh.updatedAt=Date.now();
         await dbPut("characters",fresh);
       }
       added++;
@@ -1065,7 +1087,7 @@ function renderList(){
     });
   });
 }
-function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 
 // ---- 表示: 詳細 ----
 let currentDetailId=null;
@@ -1649,8 +1671,9 @@ async function copyText(text,msg){
 // ---- 画像 ----
 async function onImagePick(e){
   const file=e.target.files[0];if(!file)return;
-  const blob=await compressImage(file,640);
   const c=characters.find(x=>x.id===currentDetailId);
+  if(!c){toast("対象の探索者が見つかりません");return;}
+  const blob=await compressImage(file,640);
   const imgId="img_"+c.id;
   await dbPut("images",{id:imgId,blob});
   if(imageCache[imgId])URL.revokeObjectURL(imageCache[imgId]);
@@ -1662,6 +1685,7 @@ async function onImagePick(e){
 }
 async function removeImage(){
   const c=characters.find(x=>x.id===currentDetailId);
+  if(!c)return;
   if(c.imageId){await dbDel("images",c.imageId);
     if(imageCache[c.imageId]){URL.revokeObjectURL(imageCache[c.imageId]);delete imageCache[c.imageId];}
     c.imageId=null;c.updatedAt=Date.now();await dbPut("characters",c);}
@@ -1773,7 +1797,9 @@ async function savePaste(){
   // 同名(同タイトル)があれば上書き確認
   const dup=characters.find(x=>(x.title&&x.title===c.title)||(x.name&&x.name===c.name));
   if(dup){
-    if(confirm(`「${dup.title||dup.name}」は既に登録されています。上書き更新しますか？\n(キャンセルで別キャラとして追加)`)){
+    // confirm()はiPhoneでブロックされることがあるため、アプリ内ダイアログを使う
+    const ow=await askConfirm(`「${dup.title||dup.name}」は既に登録されています。\n「OK」で上書き更新、「キャンセル」で別キャラとして追加します。`);
+    if(ow){
       c.id=dup.id;c.imageId=dup.imageId;c.tags=dup.tags;c.createdAt=dup.createdAt;
     }
   }
