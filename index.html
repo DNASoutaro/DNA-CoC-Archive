@@ -823,11 +823,14 @@ const USER_FIELDS=["userTags","hasSpoiler","secretMemos","spells","creatures","k
 // 自動取得JSONを既存データにマージ(charaIdをキーに)
 async function mergeFromAuto(autoData, isFull){
   if(!autoData||!Array.isArray(autoData.characters))return 0;
+  const deleted=loadDeletedIds();  // 削除済み(墓標)
   // 既存をcharaIdで索引
   const byCharaId={};
   characters.forEach(c=>{ if(c.charaId)byCharaId[c.charaId]=c; });
   let added=0, updated=0;
   for(const raw of autoData.characters){
+    // 削除済みのキャラは復活させない
+    if(raw.charaId && deleted.has(String(raw.charaId)))continue;
     // 自動JSONは抽出スクリプト形式(rawTextあり) → パースして正規化
     const fresh = (raw.skills&&raw.stats) ? raw : parseCharacter(raw.rawText||"", raw.charaId, {tags:raw.tags||[]});
     const existing = raw.charaId ? byCharaId[raw.charaId] : null;
@@ -1680,11 +1683,30 @@ function compressImage(file,maxSide){
   });
 }
 
+// 削除したcharaIdの記録(公開データからの復活を防ぐ「墓標」)
+const DELETED_KEY="coc_deleted_charaIds";
+function loadDeletedIds(){
+  try{ return new Set(JSON.parse(localStorage.getItem(DELETED_KEY)||"[]")); }catch(e){ return new Set(); }
+}
+function saveDeletedIds(set){
+  try{ localStorage.setItem(DELETED_KEY, JSON.stringify([...set])); }catch(e){}
+}
+function markDeleted(charaId){
+  if(!charaId)return;
+  const s=loadDeletedIds(); s.add(String(charaId)); saveDeletedIds(s);
+}
+function unmarkDeleted(charaId){
+  if(!charaId)return;
+  const s=loadDeletedIds(); s.delete(String(charaId)); saveDeletedIds(s);
+}
+
 async function removeCharacter(c){
   // 実削除(確認は呼び出し側で済ませる)
   if(c.imageId){await dbDel("images",c.imageId);if(imageCache[c.imageId])URL.revokeObjectURL(imageCache[c.imageId]);}
   await dbDel("characters",c.id);
   characters=characters.filter(x=>x.id!==c.id);
+  // charaIdを墓標に記録(公開データ/自動更新からの復活を防ぐ)
+  if(c.charaId)markDeleted(c.charaId);
 }
 
 // confirm() に依存しないアプリ内確認ダイアログ
@@ -1756,6 +1778,7 @@ async function savePaste(){
     }
   }
   await dbPut("characters",c);
+  if(c.charaId)unmarkDeleted(c.charaId);  // 再登録したら墓標から外す
   characters=await dbAll("characters");
   closePaste();
   toast(dup?"更新しました":"探索者を追加しました");
@@ -1897,6 +1920,7 @@ async function importJSONText(text){
     if(typeof c.kana!=="string")c.kana="";
     if(typeof c.color!=="string")c.color="";
     await dbPut("characters",c);n++;
+    if(c.charaId)unmarkDeleted(c.charaId);  // 取り込んだら墓標から外す
   }
   if(data.images){
     for(const id in data.images){
