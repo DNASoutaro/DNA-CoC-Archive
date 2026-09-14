@@ -1,8 +1,1051 @@
 {
   "system": "CoC6",
   "tag": "遺伝子の探索者",
-  "count": 216,
+  "count": 217,
   "characters": [
+    {
+      "charaId": "5562717",
+      "source": "https://charasheet.vampire-blood.net/5562717",
+      "title": "みさきかん",
+      "name": "門妙 心",
+      "job": "探偵",
+      "age": "36",
+      "sex": "男",
+      "origin": "アメリカ",
+      "tags": [
+        "遺伝子の探索者"
+      ],
+      "imageId": null,
+      "stats": {
+        "STR": 17,
+        "CON": 12,
+        "POW": 15,
+        "DEX": 5,
+        "APP": 12,
+        "SIZ": 14,
+        "INT": 15,
+        "EDU": 19,
+        "HP": 13,
+        "MP": 15,
+        "SAN_current": 75,
+        "SAN_max": 99,
+        "アイデア": 75,
+        "幸運": 75,
+        "知識": 95,
+        "DB": "1d4"
+      },
+      "skills": [
+        {
+          "name": "回避",
+          "subname": null,
+          "value": 75,
+          "initial": 10,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 65,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "キック",
+          "subname": null,
+          "value": 25,
+          "initial": 25,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "組み付き",
+          "subname": null,
+          "value": 25,
+          "initial": 25,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "こぶし（パンチ）",
+          "subname": "パンチ",
+          "value": 50,
+          "initial": 50,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true
+        },
+        {
+          "name": "頭突き",
+          "subname": null,
+          "value": 10,
+          "initial": 10,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "投擲",
+          "subname": null,
+          "value": 75,
+          "initial": 25,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 0,
+            "interest": 50,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "マーシャルアーツ",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "拳銃",
+          "subname": null,
+          "value": 20,
+          "initial": 20,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 20,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "サブマシンガン",
+          "subname": null,
+          "value": 15,
+          "initial": 15,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 15,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "ショットガン",
+          "subname": null,
+          "value": 30,
+          "initial": 30,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 30,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "マシンガン",
+          "subname": null,
+          "value": 15,
+          "initial": 15,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 15,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "ライフル",
+          "subname": null,
+          "value": 25,
+          "initial": 25,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "戦闘系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "応急手当",
+          "subname": null,
+          "value": 30,
+          "initial": 30,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 30,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "鍵開け",
+          "subname": null,
+          "value": 76,
+          "initial": 1,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 75,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "隠す",
+          "subname": null,
+          "value": 15,
+          "initial": 15,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 15,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "隠れる",
+          "subname": null,
+          "value": 10,
+          "initial": 10,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "聞き耳",
+          "subname": null,
+          "value": 70,
+          "initial": 25,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 45,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "忍び歩き",
+          "subname": null,
+          "value": 10,
+          "initial": 10,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "写真術",
+          "subname": null,
+          "value": 35,
+          "initial": 10,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 25,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "精神分析",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "追跡",
+          "subname": null,
+          "value": 70,
+          "initial": 10,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 60,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "登攀",
+          "subname": null,
+          "value": 40,
+          "initial": 40,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 40,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "図書館",
+          "subname": null,
+          "value": 70,
+          "initial": 25,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 45,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "目星",
+          "subname": null,
+          "value": 70,
+          "initial": 25,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "探索系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 45,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "運転",
+          "subname": null,
+          "value": 20,
+          "initial": 20,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 20,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "機械修理",
+          "subname": null,
+          "value": 20,
+          "initial": 20,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 20,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "重機械操作",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "乗馬",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "水泳",
+          "subname": null,
+          "value": 25,
+          "initial": 25,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "製作",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "操縦",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "跳躍",
+          "subname": null,
+          "value": 25,
+          "initial": 25,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 25,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "電気修理",
+          "subname": null,
+          "value": 10,
+          "initial": 10,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "ナビゲート",
+          "subname": null,
+          "value": 10,
+          "initial": 10,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "変装",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "行動系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "言いくるめ",
+          "subname": null,
+          "value": 70,
+          "initial": 5,
+          "hasCheck": true,
+          "isAllocated": true,
+          "category": "交渉系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 65,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "信用",
+          "subname": null,
+          "value": 15,
+          "initial": 15,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "交渉系",
+          "known": true,
+          "breakdown": {
+            "initial": 15,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "説得",
+          "subname": null,
+          "value": 15,
+          "initial": 15,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "交渉系",
+          "known": true,
+          "breakdown": {
+            "initial": 15,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "値切り",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "交渉系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "母国語",
+          "subname": null,
+          "value": 95,
+          "initial": 95,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "交渉系",
+          "known": true,
+          "breakdown": {
+            "initial": 95,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "その他の言語",
+          "subname": "日本語",
+          "value": 74,
+          "initial": null,
+          "hasCheck": true,
+          "isAllocated": false,
+          "category": "その他",
+          "known": false,
+          "breakdown": {
+            "initial": 19,
+            "job": 45,
+            "interest": 10,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "医学",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "オカルト",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "化学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "クトゥルフ神話",
+          "subname": null,
+          "value": 0,
+          "initial": 0,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true
+        },
+        {
+          "name": "芸術",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "経理",
+          "subname": null,
+          "value": 10,
+          "initial": 10,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "考古学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "コンピューター",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "心理学",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "人類学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "生物学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "地質学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "電子工学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "天文学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "博物学",
+          "subname": null,
+          "value": 10,
+          "initial": 10,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 10,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "物理学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "法律",
+          "subname": null,
+          "value": 5,
+          "initial": 5,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 5,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "薬学",
+          "subname": null,
+          "value": 1,
+          "initial": 1,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 1,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        },
+        {
+          "name": "歴史",
+          "subname": null,
+          "value": 20,
+          "initial": 20,
+          "hasCheck": false,
+          "isAllocated": false,
+          "category": "知識系",
+          "known": true,
+          "breakdown": {
+            "initial": 20,
+            "job": 0,
+            "interest": 0,
+            "growth": 0,
+            "other": 0
+          }
+        }
+      ],
+      "rawText": "﻿タイトル：みさきかん\r\n\r\nキャラクター名：門妙 心\r\n職業：探偵\r\n年齢：36 / 性別：男\r\n出身：アメリカ\r\n髪の色：白 / 瞳の色：赤紫 / 肌の色：悪い\r\n身長：174\r\n体重：それなり\r\n\r\n■能力値■\r\nHP：13\r\nMP：15\r\nSAN：75/99\r\n\r\n　　　　 STR　 CON　 POW　 DEX　 APP　 SIZ　 INT　 EDU　 HP　 MP\r\n作成時　　17　　12　　15　　 5　　12　　14　　15　　18　　13　　15\r\n成長等　　　　　　　　　　　　　　　　　　　　　　　 1\r\n他修正\r\n=合計=　　17　　12　　15　　 5　　12　　14　　15　　19　　13　　15\r\n\r\n■技能■\r\n\r\n------------------------ 戦闘系技能 ------------------------\r\n習得/名前　　　　　　 現在値　習得/名前　　　 現在値　習得/名前　　　　　 現在値\r\n●《回避》　　　　　　75％　　　《キック》　　25％　　　《組み付き》　　　25％\r\n　《こぶし（パンチ）》50％　　　《頭突き》　　10％　　●《投擲》　　　　　75％\r\n　《マーシャルアーツ》1％　　　 《拳銃》　　　20％　　　《サブマシンガン》15％\r\n　《ショットガン》　　30％　　　《マシンガン》15％　　　《ライフル》　　　25％\r\n\r\n\r\n------------------------ 探索系技能 ------------------------\r\n習得/名前　　 現在値　習得/名前　　 現在値　習得/名前　　 現在値\r\n　《応急手当》30％　　●《鍵開け》　76％　　　《隠す》　　15％\r\n　《隠れる》　10％　　●《聞き耳》　70％　　　《忍び歩き》10％\r\n●《写真術》　35％　　　《精神分析》1％　　 ●《追跡》　　70％\r\n　《登攀》　　40％　　●《図書館》　70％　　●《目星》　　70％\r\n\r\n\r\n------------------------ 行動系技能 ------------------------\r\n習得/名前　　　 現在値　習得/名前　　 現在値　習得/名前　　　 現在値\r\n　《運転》　　　20％　　　《機械修理》20％　　　《重機械操作》1％\r\n　《乗馬》　　　5％　　　 《水泳》　　25％　　　《製作()》　　5％\r\n　《操縦()》　　1％　　　 《跳躍》　　25％　　　《電気修理》　10％\r\n　《ナビゲート》10％　　　《変装》　　1％　　　 《》　　　　　％\r\n\r\n\r\n------------------------ 交渉系技能 ------------------------\r\n習得/名前　　　 現在値　習得/名前　　 現在値　習得/名前　　　　　　　　 現在値\r\n●《言いくるめ》70％　　　《信用》　　15％　　　《説得》　　　　　　　　15％\r\n　《値切り》　　5％　　　 《母国語()》95％　　●《その他の言語(日本語)》74％\r\n\r\n\r\n------------------------ 知識系技能 ------------------------\r\n習得/名前　　　　　 現在値　習得/名前　　　　　 現在値　習得/名前　 現在値\r\n　《医学》　　　　　5％　　　 《オカルト》　　　5％　　　 《化学》　1％\r\n　《クトゥルフ神話》0％　　　 《芸術()》　　　　5％　　　 《経理》　10％\r\n　《考古学》　　　　1％　　　 《コンピューター》1％　　　 《心理学》5％\r\n　《人類学》　　　　1％　　　 《生物学》　　　　1％　　　 《地質学》1％\r\n　《電子工学》　　　1％　　　 《天文学》　　　　1％　　　 《博物学》10％\r\n　《物理学》　　　　1％　　　 《法律》　　　　　5％　　　 《薬学》　1％\r\n　《歴史》　　　　　20％　　　《》　　　　　　　％　　　　《》　　　％\r\n\r\n\r\n■戦闘■\r\n\r\nダメージボーナス：1d4\r\n名称　成功率　ダメージ　射程　　攻撃回数　装弾数　耐久力　/ 備考\r\n　　　　　　　　　　　　　　　　　　　　　　　　　　　　　/\r\n　　　　　　　　　　　　　　　　　　　　　　　　　　　　　/\r\n\r\n\r\n■所持品■\r\n名称　単価　個数　価格　備考\r\n　　　　　　1　　 0\r\n　　　　　　1　　 0\r\n　　　　　　1　　 0\r\n　　　　　　1　　 0\r\n\r\n=所持品合計=　　　　　0\r\n\r\n所持金\r\n預金・借金\r\n\r\n■その他■\r\n\r\nメモ：\r\n特徴表\r\n・1-7　勉強家\r\n　↳EDU+1\r\n・3-2　暗黒の祖先（影響力96、追加Pt：10）（今回適用無し。振り分けする場合は言いくるめに+10とする）\r\n　↳邪悪な存在の系譜　一応門妙の家系としてはシュブ系の家系\r\n\r\n職業技能の修正点\r\n・心理学→その他の言語（日本語）に変更\r\n　日本で探偵をしているため変更。人の心分からないので心理学なし。\r\n\r\n傷の位置\r\n左の腹から腰骨にかけての辺り　鼠径部付近\r\n\r\nｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰ\r\n\r\n米国での名前はハァツ・キドナ。帰化名が門妙 心。\r\n日本人の血が強いクォーター。15歳までアメリカで暮らしており、そこから日本に住んでいた親戚に引き取られ、齢32の頃に帰化した。\r\n帰化名と元の名前（通称）を言い様に使い分けてる。名乗りがまちまち。\r\n\r\n日本に来てからは地方の田舎で暮らしていたが、現在は都心で一人暮らし中。\r\n日本に引き取ってくれた親戚の死後に遺産が転がり込んできたため、細々と探偵業をしながら過ごしている。\r\n無名だし才能ややる気に溢れていると言うわけでもないが、それなりに暮らせる程度には稼ぎは得られている。\r\n仕事を続けてる理由の9割は自分の欲の下支えである。\r\n\r\n日本のサブカル文化が好き。オタク文化も結構好き。漫画を読んだりアニメを見たり……\r\n趣味で写真をよく撮る。かつては写真家を志したこともあったが、好きな物を仕事にすると後々きつくなる、と思って辞めた。\r\n\r\n性格は良い……ように見せている。上面が良いとする。中身の性格は悪い。正確には「人を人と思ってない」が正しい。\r\nよく世間的に想像される「ゲーム脳」の人。エロゲの主人公脳。エロイな～、か、興味ないな～、かの二択になりがち。他人の感情の機微に興味がないが、最低限真似る程度の事はしようとする。\r\nセックスしてる時に語彙がキショくなるタイプの人。\r\n生温い血肉が好き。これはこの家系の生まれつきの気質。粘膜も好き。ぬるついたものが好き。\r\n\r\n性犯罪者。まだバレてないだけの人。探偵業の過程で依頼された相手または依頼者のみをターゲットにしている。加虐嗜好。\r\n基本的に非合意睡眠姦。家に侵入して眠剤を盛る方。\r\nまた、バレた場合に脅したら泣き寝入りしてくれそうな相手が中心。男も女も関係なし。比較的女の方が膂力がザコだから＆妊娠の可能性を踏まえて女を狙いがち。\r\nハメ撮り好き。今までのレイプ被害者の動画や写真がローカルで色々残っている。\r\n睡眠姦ばっかやってるのは後々孕んだ時の相手の嫌悪と絶望の顔を考えるとクソ興奮するから。性格が大変悪い。\r\n現時点で被疑者にあげられたことや前科がついたことはない。\r\n\r\nｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰ\r\n\r\n【HO3】探偵\r\n貴方は探偵だ。才能の有無は自由だし、有名でも、そうでなくても構わない。やる気もあってもなくても構わない。\r\n\r\n【不思議な手紙】\r\nある日あなたに手紙が届く。「今この館で殺人事件が起きている。どうかこの館に来てほしい。事件を解決して見せてくれ！一人も探偵がいないなんてつまらないだろう？待っているよ！館の君の部屋に、ヒントを置いておくね。」\r\n手紙を見た貴方はなんだか妙な引っ掛かりを覚え、館を訪れることにした。\r\n\r\n【傷】\r\n貴方は体に「傷」が生まれた。傷は花の模様をしている。真っ黒で、毒々しいこの傷口は、痛みもなければ流血もないのだが…貴方は漠然とこの傷を隠さねばならない、と考えている。この傷は、他人に知られてはならない。\r\n＜傷の位置＞をシナリオ開始までに決定しておいてください。（花についてはまだ調べていないため種類はわからない）\r\nまた、その傷が見えないように、衣服などで覆い隠してください。（例：手→手袋 太もも→スボン／包帯などで覆うなども可能）\r\n\r\n【推奨】\r\n英語／鍵開け　など（全て取得する必要はない）\r\n\r\n▼目標（達成した場合は生還時に追加報酬）\r\n・『連続殺人鬼』を見つけ出す。\r\n\r\nｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰｰ\r\n\r\nSIN 色欲：※男性限定\r\nあなたは性に奔放！強姦魔！嫌がる相手を手籠めにするのが趣味だ。\r\n館にはかわいいメイドや綺麗な主人がいるらしい。あと執事もいる。\r\n◆あなたは誰かの成功した技能を失敗に変更させることができる。\r\n◆変更させた回数だけ、幸運の値が 5％ずつ減少する。0 になった場合は能力が使えなくなる。\r\n\r\nsin：あなたは誰かと二人きりになった場合強姦行為を行う\r\nまた、貴方は自分と同じ\" 匂い\" の人物には発情しない。\r\n匂い=SIN、つまり、色欲を司る人間がいた場合、貴方はその人物だけは襲わない。\r\n\r\nSINハウスルール\r\n部屋とされる場所でSIN色欲以外のPC/NPCと2人きりになった場合に強制発症。廊下、エントランス、屋外…等の広い場所はノーカウント。\r\n相手が抵抗しない場合は自動成功で強姦可能。抵抗する場合はSTR対抗が発生する。色欲勝利で強姦成功となる。\r\n\r\nまた、未遂で終わった場合も「性的に襲いかかってきた」ことは相手に伝わるものとする。\r\n\r\n■簡易用■\r\n門妙 心(男) 職業:探偵 年齢:36　PL:\r\nSTR:17　　DEX:5　　INT:15　ｱｲﾃﾞｱ:75\r\nCON:12　　APP:12　　POW:15　　幸 運:75\r\nSIZ:14　SAN:99　EDU:19　知 識:95\r\nH P:13　　M P:15　　回避:dex*2　　ﾀﾞﾒｰｼﾞﾎﾞｰﾅｽ:1d4\r\n――――――――――――――――――――――――――\r\n[技能]（職業技能点:380 個人技能点:150） (書式:職業/個人<成長>[その他])\r\n\r\n――――――――――――――――――――――――――\r\n[持ち物]\r\n・武器\r\n――――――――ここに記入――――――――\r\n・防具\r\n――――――――ここに記入――――――――\r\n・所持品\r\n――――――――ここに記入――――――――\r\n\r\n[プロフィール]",
+      "_updatedAt": null,
+      "_txtHash": "bc782bad6ec82e7d"
+    },
     {
       "charaId": "5140567",
       "source": "https://charasheet.vampire-blood.net/5140567",
